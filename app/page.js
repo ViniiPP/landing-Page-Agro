@@ -166,7 +166,7 @@ export default function LandingPage() {
 
       {/* FOOTER */}
       <footer className="bg-green-950 text-green-200 py-8 text-center text-sm">
-        <p>&copy; 2024 AgroSoja. Todos os direitos reservados.</p>
+        <p>&copy; 2025 AgroSoja. Todos os direitos reservados.</p>
         <p className="mt-2">Desenvolvido para excelência no Agro.</p>
       </footer>
 
