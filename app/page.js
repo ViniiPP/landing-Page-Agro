@@ -1,36 +1,35 @@
 "use client";
 import { useEffect, useState } from 'react';
-import { collection, getDocs, doc, getDoc } from 'firebase/firestore'; // Adicionado getDoc e doc
+import { collection, getDocs, doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { Phone, Target, Eye, Sprout, Tractor, MessageCircle } from 'lucide-react';
+import { Phone, Target, Eye, Sprout, Tractor, MessageCircle, X } from 'lucide-react'; // Adicionei o X
 
 export default function LandingPage() {
   const [produtos, setProdutos] = useState([]);
   const [filtro, setFiltro] = useState('todos');
   
-  // ESTADO PARA DADOS DE CONTATO (Com valores padrão iniciais)
+  // ESTADO DO MODAL (NOVO)
+  // Se estiver null, modal fechado. Se tiver um objeto, modal aberto com os dados.
+  const [produtoSelecionado, setProdutoSelecionado] = useState(null);
+
+  // ESTADO PARA DADOS DE CONTATO
   const [contato, setContato] = useState({
     telefone: '(00) 00000-0000',
     email: 'contato@agrosoja.com',
     endereco: 'Endereço não cadastrado'
   });
 
-  // Busca dados iniciais
   useEffect(() => {
     const fetchData = async () => {
-      // 1. Buscar Produtos
       const querySnapshot = await getDocs(collection(db, "produtos"));
       setProdutos(querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
 
-      // 2. Buscar Configurações de Contato
       try {
         const docRef = doc(db, "configuracoes", "contato");
         const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) {
-          setContato(docSnap.data());
-        }
+        if (docSnap.exists()) setContato(docSnap.data());
       } catch (error) {
-        console.error("Erro ao carregar contato:", error);
+        console.error("Erro config:", error);
       }
     };
     fetchData();
@@ -40,7 +39,6 @@ export default function LandingPage() {
     ? produtos 
     : produtos.filter(p => p.categoria === filtro);
 
-  // Formata numero para link do whats (remove tudo que não é numero)
   const whatsAppLink = `https://wa.me/55${contato.telefone.replace(/\D/g, '')}`;
 
   return (
@@ -77,7 +75,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* SEÇÃO MISSÃO VISÃO VALORES (MANTIDA IGUAL) */}
+      {/* MISSÃO VISÃO VALORES */}
       <section id="planejamento" className="py-20 bg-white">
         <div className="container mx-auto px-6">
           <div className="text-center mb-16">
@@ -104,31 +102,44 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* PRODUTOS (IGUAL AO ANTERIOR) */}
+      {/* PRODUTOS - COM CLIQUE NA IMAGEM */}
       <section id="produtos" className="py-20 bg-gray-50">
         <div className="container mx-auto px-6">
           <h3 className="text-3xl font-bold text-center text-green-800 mb-10">Nossa Produção</h3>
           
           <div className="flex justify-center gap-4 mb-10">
-            <button onClick={() => setFiltro('todos')} className={`px-4 py-2 rounded-full ${filtro === 'todos' ? 'bg-green-600 text-white' : 'bg-white text-gray-600'}`}>Todos</button>
-            <button onClick={() => setFiltro('plantada')} className={`px-4 py-2 rounded-full ${filtro === 'plantada' ? 'bg-green-600 text-white' : 'bg-white text-gray-600'}`}>Lavoura</button>
-            <button onClick={() => setFiltro('graos')} className={`px-4 py-2 rounded-full ${filtro === 'graos' ? 'bg-green-600 text-white' : 'bg-white text-gray-600'}`}>Grãos</button>
+            <button onClick={() => setFiltro('todos')} className={`px-4 py-2 rounded-full ${filtro === 'todos' ? 'bg-green-600 text-white' : 'bg-white text-gray-600 cursor-pointer'}`}>Todos</button>
+            <button onClick={() => setFiltro('plantada')} className={`px-4 py-2 rounded-full ${filtro === 'plantada' ? 'bg-green-600 text-white' : 'bg-white text-gray-600 cursor-pointer'}`}>Lavoura</button>
+            <button onClick={() => setFiltro('graos')} className={`px-4 py-2 rounded-full ${filtro === 'graos' ? 'bg-green-600 text-white' : 'bg-white text-gray-600 cursor-pointer'}`}>Grãos</button>
           </div>
 
           <div className="grid md:grid-cols-3 gap-8">
             {produtosFiltrados.length === 0 && <p className="text-center w-full col-span-3 text-gray-500">Nenhum produto cadastrado ainda.</p>}
             
             {produtosFiltrados.map((item) => (
-              <div key={item.id} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition">
-                <div className="h-64 overflow-hidden">
-                  <img src={item.imagemUrl} alt={item.titulo} className="w-full h-full object-cover hover:scale-105 transition duration-500" />
+              <div key={item.id} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition group">
+                <div 
+                  className="h-64 overflow-hidden cursor-pointer relative"
+                  onClick={() => setProdutoSelecionado(item)} // AO CLICAR, ABRE O MODAL
+                >
+                  <img src={item.imagemUrl} alt={item.titulo} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
+                  {/* Ícone de ampliar que aparece no hover */}
+                  <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
+                    <span className="text-white bg-black/50 px-3 py-1 rounded-full text-sm backdrop-blur-sm">Ver detalhes</span>
+                  </div>
                 </div>
                 <div className="p-6">
                   <div className="flex justify-between items-center mb-2">
                     <span className="text-xs font-bold text-green-600 uppercase tracking-wide bg-green-100 px-2 py-1 rounded">{item.categoria === 'graos' ? 'Grãos' : 'Lavoura'}</span>
                   </div>
                   <h4 className="text-xl font-bold text-gray-800 mb-2">{item.titulo}</h4>
-                  <p className="text-gray-600 text-sm">{item.descricao}</p>
+                  <p className="text-gray-600 text-sm line-clamp-2">{item.descricao}</p>
+                  <button 
+                    onClick={() => setProdutoSelecionado(item)} 
+                    className="mt-4 text-green-600 text-sm font-bold hover:underline cursor-pointer"
+                  >
+                    Ler mais...
+                  </button>
                 </div>
               </div>
             ))}
@@ -136,34 +147,19 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* CONTATO (AGORA DINÂMICO) */}
+      {/* CONTATO */}
       <section id="contato" className="py-20 bg-green-900 text-white">
         <div className="container mx-auto px-6">
           <div className="grid md:grid-cols-2 gap-12">
             <div>
               <h3 className="text-3xl font-bold mb-6">Entre em Contato</h3>
               <p className="mb-8 text-green-100">Fale diretamente com nossa equipe comercial.</p>
-              
               <div className="space-y-4">
-                <div className="flex items-center gap-4">
-                  <Phone className="w-6 h-6 text-yellow-500" />
-                  {/* Variável dinâmica aqui */}
-                  <span>{contato.telefone}</span>
-                </div>
-                <div className="flex items-center gap-4">
-                  <MessageCircle className="w-6 h-6 text-yellow-500" />
-                  {/* Variável dinâmica aqui */}
-                  <span>{contato.email}</span>
-                </div>
-                <div className="flex items-center gap-4">
-                  <Tractor className="w-6 h-6 text-yellow-500" />
-                  {/* Variável dinâmica aqui */}
-                  <span>{contato.endereco}</span>
-                </div>
+                <div className="flex items-center gap-4"><Phone className="w-6 h-6 text-yellow-500" /><span>{contato.telefone}</span></div>
+                <div className="flex items-center gap-4"><MessageCircle className="w-6 h-6 text-yellow-500" /><span>{contato.email}</span></div>
+                <div className="flex items-center gap-4"><Tractor className="w-6 h-6 text-yellow-500" /><span>{contato.endereco}</span></div>
               </div>
             </div>
-            
-            {/* FORMULÁRIO (APENAS VISUAL POR ENQUANTO) */}
             <form className="bg-white p-8 rounded-lg text-gray-800">
               <div className="mb-4">
                 <label className="block text-sm font-bold mb-2">Nome</label>
@@ -183,15 +179,62 @@ export default function LandingPage() {
         <p className="mt-2">{contato.email}</p>
       </footer>
 
-      {/* BOTÃO WHATSAPP FLUTUANTE (DINÂMICO) */}
-      <a 
-        href={whatsAppLink}
-        target="_blank"
-        className="fixed bottom-6 right-6 bg-green-500 text-white p-4 rounded-full shadow-lg hover:bg-green-600 transition z-50 animate-bounce"
-        title="Fale no WhatsApp"
-      >
+      {/* WHATSAPP FLUTUANTE */}
+      <a href={whatsAppLink} target="_blank" className="fixed bottom-6 right-6 bg-green-500 text-white p-4 rounded-full shadow-lg hover:bg-green-600 transition z-50 animate-bounce">
         <MessageCircle size={32} />
       </a>
+
+      {/* MODAL */}
+      {produtoSelecionado && (
+        <div 
+          className="fixed inset-0 z-[60] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in"
+          onClick={() => setProdutoSelecionado(null)} // Clicar fora fecha o modal
+        >
+          <div 
+            className="bg-white rounded-xl shadow-2xl max-w-4xl w-full overflow-hidden flex flex-col md:flex-row relative"
+            onClick={(e) => e.stopPropagation()} // Clicar dentro não fecha
+          >
+            {/* Botão Fechar */}
+            <button 
+              onClick={() => setProdutoSelecionado(null)}
+              className="absolute top-4 right-4 bg-white/80 p-2 rounded-full hover:bg-white text-gray-800 z-10 shadow-lg cursor-pointer"
+            >
+              <X size={24} />
+            </button>
+
+            {/* Imagem Grande */}
+            <div className="w-full md:w-1/2 h-64 md:h-auto bg-gray-100">
+              <img 
+                src={produtoSelecionado.imagemUrl} 
+                alt={produtoSelecionado.titulo} 
+                className="w-full h-full object-cover"
+              />
+            </div>
+
+            {/* Conteúdo */}
+            <div className="w-full md:w-1/2 p-8 md:p-12 flex flex-col justify-center">
+              <span className="text-sm font-bold text-green-600 uppercase tracking-wide mb-2 block">
+                {produtoSelecionado.categoria === 'graos' ? 'Grãos' : 'Lavoura'}
+              </span>
+              <h3 className="text-3xl font-bold text-gray-900 mb-6">{produtoSelecionado.titulo}</h3>
+              
+              {/* Descrição com barra de rolagem se for muito grande */}
+              <div className="prose text-gray-600 mb-8 max-h-60 overflow-y-auto pr-2">
+                <p className="whitespace-pre-wrap leading-relaxed">{produtoSelecionado.descricao}</p>
+              </div>
+
+              <button 
+                onClick={() => window.open(whatsAppLink, '_blank')}
+                className="bg-green-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-green-700 transition flex items-center gap-2 w-fit cursor-pointer"
+              >
+                <MessageCircle size={20} />
+                Tenho interesse
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </main>
   );
 }
