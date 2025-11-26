@@ -61,7 +61,7 @@ export default function LandingPage() {
 
   const produtosFiltrados = filtro === 'todos' ? produtos : produtos.filter(p => p.categoria === filtro);
   
-  // Link padrão (sem texto específico) para botões genéricos
+  // Link padrão
   const cleanPhone = contato.telefone.replace(/\D/g, '');
   const whatsAppLinkPadrao = `https://wa.me/55${cleanPhone}`;
 
@@ -87,12 +87,11 @@ export default function LandingPage() {
             <Sprout className="text-green-600" /> AgroSoja
           </h1>
           
-          {/* MENU CORRIGIDO */}
           <nav className="hidden md:flex gap-8 text-sm font-medium text-gray-600">
             {[
               { name: 'Início', id: 'home' },
               { name: 'Sobre', id: 'sobre' },
-              { name: 'Produção', id: 'producao' }, // Corrigido ID para bater com a section
+              { name: 'Produção', id: 'producao' },
               { name: 'Contato', id: 'contato' }
             ].map((item) => (
               <a 
@@ -115,7 +114,7 @@ export default function LandingPage() {
       {/* HERO SECTION */}
       <section id="home" className="relative h-screen flex items-center justify-center overflow-hidden">
         <div className="absolute inset-0 bg-black/40 z-10"></div>
-        <div className="absolute inset-0 bg-cover bg-center animate-slow-zoom blur-xs" style={{ backgroundImage: "url('/imgs/capa1.jpg')" }}></div>
+        <div className="absolute inset-0 bg-cover bg-center animate-slow-zoom blur-xs" style={{ backgroundImage: "url('/imgs/soja.jpg')" }}></div>
         
         <div className="relative z-20 text-center text-white px-4">
           <FadeIn>
@@ -230,7 +229,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* CONTATO COM FORMULÁRIO INTELIGENTE */}
+      {/* CONTATO */}
       <section id="contato" className="py-24 bg-green-900 text-white relative overflow-hidden">
         <div className="absolute top-0 right-0 w-96 h-96 bg-green-800 rounded-full blur-3xl opacity-50 -translate-y-1/2 translate-x-1/2"></div>
         <div className="absolute bottom-0 left-0 w-64 h-64 bg-yellow-600 rounded-full blur-3xl opacity-20 translate-y-1/2 -translate-x-1/2"></div>
@@ -290,7 +289,6 @@ export default function LandingPage() {
                       placeholder="Interesse em soja..." 
                     />
                   </div>
-                  {/* BOTÃO QUE ENVIA MENSAGEM DINÂMICA */}
                   <button 
                     onClick={handleEnviarMensagem} 
                     className="w-full bg-green-600 text-white font-bold py-4 rounded-lg hover:bg-green-700 transition shadow-lg hover:shadow-green-200 mt-4 flex items-center justify-center gap-2 cursor-pointer"
@@ -330,31 +328,35 @@ export default function LandingPage() {
           onClick={() => setProdutoSelecionado(null)}
         >
           <div 
-            className="bg-white rounded-2xl shadow-2xl max-w-5xl w-full overflow-hidden flex flex-col md:flex-row relative animate-[scaleIn_0.3s_ease-out]"
+            className="bg-white rounded-2xl shadow-2xl max-w-5xl w-full flex flex-col md:flex-row relative animate-[scaleIn_0.3s_ease-out] max-h-[90vh] md:max-h-full overflow-y-auto md:overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
-            <button onClick={() => setProdutoSelecionado(null)} className="absolute top-4 right-4 bg-white/90 p-2 rounded-full hover:bg-gray-100 text-gray-800 z-10 transition-colors cursor-pointer">
+            <button onClick={() => setProdutoSelecionado(null)} className="absolute top-4 right-4 bg-white/90 p-2 rounded-full hover:bg-gray-100 text-gray-800 z-10 transition-colors cursor-pointer shadow-sm">
               <X size={24} />
             </button>
 
-            <div className="w-full md:w-1/2 h-64 md:h-auto bg-gray-100 relative">
+            {/* Imagem menor no mobile (h-48) e altura automática no desktop (md:h-auto) */}
+            <div className="w-full md:w-1/2 h-48 md:h-auto bg-gray-100 relative shrink-0">
               <img src={produtoSelecionado.imagemUrl} alt={produtoSelecionado.titulo} className="w-full h-full object-cover" />
             </div>
 
-            <div className="w-full md:w-1/2 p-8 md:p-12 flex flex-col relative">
-              <span className="text-xs font-bold text-green-600 uppercase tracking-widest mb-3 flex items-center gap-2">
+            {/* Padding menor no mobile (p-6) e maior no desktop (md:p-12) */}
+            <div className="w-full md:w-1/2 p-6 md:p-12 flex flex-col relative">
+              <span className="text-xs font-bold text-green-600 uppercase tracking-widest mb-2 md:mb-3 flex items-center gap-2">
                 <div className="w-2 h-2 rounded-full bg-green-500"></div>
                 {produtoSelecionado.categoria === 'graos' ? 'Grãos' : 'Lavoura'}
               </span>
-              <h3 className="text-3xl md:text-4xl font-bold text-gray-900 mb-6 leading-tight">{produtoSelecionado.titulo}</h3>
               
-              <div className="prose text-gray-600 mb-8 max-h-[40vh] overflow-y-auto pr-4 custom-scrollbar leading-relaxed text-lg">
+              {/* Texto menor no mobile (text-2xl) e maior no desktop (md:text-4xl) */}
+              <h3 className="text-2xl md:text-4xl font-bold text-gray-900 mb-4 md:mb-6 leading-tight">{produtoSelecionado.titulo}</h3>
+              
+              <div className="prose text-gray-600 mb-6 md:mb-8 max-h-[30vh] md:max-h-[40vh] overflow-y-auto pr-4 custom-scrollbar leading-relaxed text-base md:text-lg">
                 <p>{produtoSelecionado.descricao}</p>
               </div>
 
-              <div className="mt-auto pt-6 border-t border-gray-100">
-                <button onClick={() => window.open(whatsAppLinkPadrao, '_blank')} className="w-full bg-green-600 text-white font-bold py-4 rounded-xl hover:bg-green-700 transition flex items-center justify-center gap-3 shadow-lg hover:shadow-green-200 hover:-translate-y-1 cursor-pointer">
-                  <MessageCircle size={22} />
+              <div className="mt-auto pt-4 md:pt-6 border-t border-gray-100">
+                <button onClick={() => window.open(whatsAppLinkPadrao, '_blank')} className="w-full bg-green-600 text-white font-bold py-3 md:py-4 rounded-xl hover:bg-green-700 transition flex items-center justify-center gap-3 shadow-lg hover:shadow-green-200 hover:-translate-y-1 cursor-pointer text-sm md:text-base">
+                  <MessageCircle size={20} />
                   Solicitar Cotação / Informações
                 </button>
               </div>
