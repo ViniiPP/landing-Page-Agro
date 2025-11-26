@@ -81,3 +81,12 @@ html {
 .animate-scaleIn {
   animation: scaleIn 0.3s ease-out forwards;
 }
+
+/* Utilitário para esconder barra de rolagem (mas permitir rolar) */
+.scrollbar-hide::-webkit-scrollbar {
+    display: none;
+}
+.scrollbar-hide {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+}
