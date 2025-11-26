@@ -14,8 +14,9 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    /* Mudei para cores claras propositalmente para manter o design Agro limpo */
+    --background: #ffffff; 
+    --foreground: #171717;
   }
 }
 
@@ -23,4 +24,60 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+  overflow-x: hidden; /* Evita rolagem lateral indesejada */
+}
+
+/* --- AQUI COMEÇAM AS MELHORIAS VISUAIS --- */
+
+/* 1. Rolagem Suave (Resolve o scroll "seco") */
+html {
+  scroll-behavior: smooth;
+}
+
+/* 2. Barra de Rolagem Personalizada (Estilo Agro) */
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #16a34a; /* Verde da identidade */
+  border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #15803d; /* Verde mais escuro ao passar o mouse */
+}
+
+/* 3. Animação de Zoom Lento (Para a capa/hero não ficar estática) */
+@keyframes slowZoom {
+  0% { transform: scale(1); }
+  100% { transform: scale(1.1); }
+}
+
+.animate-slow-zoom {
+  animation: slowZoom 20s infinite alternate linear;
+}
+
+/* 4. Animações para o Modal (Abrir suavemente) */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes scaleIn {
+  from { transform: scale(0.9); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+/* Classes utilitárias caso o Tailwind não pegue automaticamente */
+.animate-fadeIn {
+  animation: fadeIn 0.3s ease-out forwards;
+}
+
+.animate-scaleIn {
+  animation: scaleIn 0.3s ease-out forwards;
 }
