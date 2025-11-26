@@ -286,7 +286,7 @@ export default function AdminPage() {
           </form>
         </div>
 
-        {/* --- FORMULÁRIO DE PRODUTOS --- */}
+        {/* FORMULÁRIO DE PRODUTOS */}
         <div
           className={`p-6 rounded-lg shadow-md mb-10 transition-colors ${
             editingId ? "bg-blue-50 border-2 border-blue-200" : "bg-white"
