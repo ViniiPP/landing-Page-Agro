@@ -253,7 +253,7 @@ export default function AdminPage() {
                 <input
                   type="file"
                   onChange={(e) => setImagem(e.target.files[0])}
-                  className="border p-2 rounded w-full text-black bg-white cursoir-pointer"
+                  className="border p-2 rounded w-full text-black bg-white cursor-pointer"
                   accept="image/*"
                 />
                 {editingId && !imagem && (
