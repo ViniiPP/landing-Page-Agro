@@ -4,8 +4,7 @@ import { collection, getDocs, doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Phone, Target, Eye, Sprout, Tractor, MessageCircle, X, ChevronDown } from 'lucide-react';
 
-// --- COMPONENTE DE ANIMAÇÃO (NOVO) ---
-// Envolve qualquer seção para fazer ela aparecer suavemente
+// COMPONENTE DE ANIMAÇÃO
 function FadeIn({ children, delay = 0 }) {
   const [isVisible, setIsVisible] = useState(false);
   const domRef = useRef();
@@ -36,6 +35,11 @@ export default function LandingPage() {
   const [produtos, setProdutos] = useState([]);
   const [filtro, setFiltro] = useState('todos');
   const [produtoSelecionado, setProdutoSelecionado] = useState(null);
+  
+  // ESTADOS DO FORMULÁRIO
+  const [formNome, setFormNome] = useState('');
+  const [formAssunto, setFormAssunto] = useState('');
+
   const [contato, setContato] = useState({
     telefone: '(00) 00000-0000',
     email: 'contato@agrosoja.com',
@@ -56,22 +60,39 @@ export default function LandingPage() {
   }, []);
 
   const produtosFiltrados = filtro === 'todos' ? produtos : produtos.filter(p => p.categoria === filtro);
-  const whatsAppLink = `https://wa.me/55${contato.telefone.replace(/\D/g, '')}`;
+  
+  // Link padrão (sem texto específico) para botões genéricos
+  const cleanPhone = contato.telefone.replace(/\D/g, '');
+  const whatsAppLinkPadrao = `https://wa.me/55${cleanPhone}`;
+
+  // FUNÇÃO QUE ENVIA A MENSAGEM PERSONALIZADA
+  const handleEnviarMensagem = () => {
+    let mensagem = "Olá! Vim pelo site da AgroSoja.";
+    
+    if (formNome || formAssunto) {
+      mensagem = `Olá, me chamo *${formNome || 'Visitante'}*.\n\nGostaria de falar sobre: *${formAssunto || 'Assuntos gerais'}*.`;
+    }
+
+    const encodedMessage = encodeURIComponent(mensagem);
+    window.open(`https://wa.me/55${cleanPhone}?text=${encodedMessage}`, '_blank');
+  };
 
   return (
     <main className="min-h-screen font-sans text-gray-800 bg-gray-50 selection:bg-green-200 selection:text-green-900">
       
-      {/* HEADER - Com transição de opacidade */}
+      {/* HEADER */}
       <header className="fixed w-full bg-white/90 backdrop-blur-md shadow-sm z-50 transition-all duration-300">
         <div className="container mx-auto px-6 py-4 flex justify-between items-center">
           <h1 className="text-2xl font-bold text-green-800 flex items-center gap-2 hover:scale-105 transition-transform cursor-default">
             <Sprout className="text-green-600" /> AgroSoja
           </h1>
+          
+          {/* MENU CORRIGIDO */}
           <nav className="hidden md:flex gap-8 text-sm font-medium text-gray-600">
             {[
               { name: 'Início', id: 'home' },
               { name: 'Sobre', id: 'sobre' },
-              { name: 'Produção', id: 'producao' },
+              { name: 'Produção', id: 'producao' }, // Corrigido ID para bater com a section
               { name: 'Contato', id: 'contato' }
             ].map((item) => (
               <a 
@@ -84,24 +105,24 @@ export default function LandingPage() {
               </a>
             ))}
           </nav>
-          <a href={whatsAppLink} target="_blank" className="bg-green-600 text-white px-5 py-2.5 rounded-full text-sm font-bold shadow-lg hover:bg-green-700 hover:shadow-green-200 hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+
+          <a href={whatsAppLinkPadrao} target="_blank" className="bg-green-600 text-white px-5 py-2.5 rounded-full text-sm font-bold shadow-lg hover:bg-green-700 hover:shadow-green-200 hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
             Fale Conosco
           </a>
         </div>
       </header>
 
-      {/* HERO SECTION - Com efeito de Zoom Lento */}
+      {/* HERO SECTION */}
       <section id="home" className="relative h-screen flex items-center justify-center overflow-hidden">
         <div className="absolute inset-0 bg-black/40 z-10"></div>
-        {/* A classe animate-slow-zoom vem do CSS Global que criamos */}
-        <div className="absolute inset-0 bg-cover bg-center animate-slow-zoom" style={{ backgroundImage: "url('/imgs/soja.jpg')" }}></div>
+        <div className="absolute inset-0 bg-cover bg-center animate-slow-zoom blur-xs" style={{ backgroundImage: "url('/imgs/capa1.jpg')" }}></div>
         
         <div className="relative z-20 text-center text-white px-4">
           <FadeIn>
             <h2 className="text-5xl md:text-7xl font-bold mb-6 drop-shadow-lg tracking-tight">Excelência do<br/>Plantio à Colheita</h2>
             <p className="text-xl md:text-2xl mb-10 max-w-2xl mx-auto drop-shadow-md text-gray-100 font-light">Soluções estratégicas e grãos de alta qualidade para o mercado global.</p>
             <div className="flex flex-col md:flex-row gap-4 justify-center">
-              <a href="#produtos" className="bg-yellow-500 text-green-950 font-bold px-8 py-4 rounded-full hover:bg-yellow-400 hover:scale-105 transition-all shadow-lg hover:shadow-yellow-500/30">
+              <a href="#producao" className="bg-yellow-500 text-green-950 font-bold px-8 py-4 rounded-full hover:bg-yellow-400 hover:scale-105 transition-all shadow-lg hover:shadow-yellow-500/30">
                 Ver Nossa Produção
               </a>
               <a href="#contato" className="bg-transparent border-2 border-white text-white font-bold px-8 py-4 rounded-full hover:bg-white hover:text-green-900 transition-all">
@@ -111,13 +132,12 @@ export default function LandingPage() {
           </FadeIn>
         </div>
         
-        {/* Ícone indicando rolagem */}
         <div className="absolute bottom-10 z-20 animate-bounce text-white/70">
           <ChevronDown size={32} />
         </div>
       </section>
 
-      {/* MISSÃO VISÃO VALORES - Cards animados */}
+      {/* MISSÃO VISÃO VALORES */}
       <section id="sobre" className="py-24 bg-white">
         <div className="container mx-auto px-6">
           <FadeIn>
@@ -166,7 +186,7 @@ export default function LandingPage() {
                 <button 
                   key={tipo}
                   onClick={() => setFiltro(tipo)} 
-                  className={`px-6 py-2 rounded-full font-medium transition-all duration-300 border 
+                  className={`px-6 py-2 rounded-full font-medium transition-all duration-300 border cursor-pointer 
                     ${filtro === tipo 
                       ? 'bg-green-600 text-white border-green-600 shadow-lg scale-105' 
                       : 'bg-white text-gray-500 border-gray-200 hover:border-green-400 hover:text-green-600'}`}
@@ -210,9 +230,8 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* CONTATO */}
+      {/* CONTATO COM FORMULÁRIO INTELIGENTE */}
       <section id="contato" className="py-24 bg-green-900 text-white relative overflow-hidden">
-        {/* Background decorativo */}
         <div className="absolute top-0 right-0 w-96 h-96 bg-green-800 rounded-full blur-3xl opacity-50 -translate-y-1/2 translate-x-1/2"></div>
         <div className="absolute bottom-0 left-0 w-64 h-64 bg-yellow-600 rounded-full blur-3xl opacity-20 translate-y-1/2 -translate-x-1/2"></div>
 
@@ -253,13 +272,29 @@ export default function LandingPage() {
                 <div className="space-y-4">
                   <div>
                     <label className="block text-sm font-bold mb-2 text-gray-600">Seu Nome</label>
-                    <input type="text" className="w-full bg-gray-50 border border-gray-200 p-3 rounded-lg focus:ring-2 focus:ring-green-500 outline-none transition" placeholder="Nome completo" />
+                    <input 
+                      type="text" 
+                      value={formNome}
+                      onChange={(e) => setFormNome(e.target.value)}
+                      className="w-full bg-gray-50 border border-gray-200 p-3 rounded-lg focus:ring-2 focus:ring-green-500 outline-none transition" 
+                      placeholder="Nome completo" 
+                    />
                   </div>
                   <div>
                     <label className="block text-sm font-bold mb-2 text-gray-600">Assunto</label>
-                    <input type="text" className="w-full bg-gray-50 border border-gray-200 p-3 rounded-lg focus:ring-2 focus:ring-green-500 outline-none transition" placeholder="Interesse em soja..." />
+                    <input 
+                      type="text" 
+                      value={formAssunto}
+                      onChange={(e) => setFormAssunto(e.target.value)}
+                      className="w-full bg-gray-50 border border-gray-200 p-3 rounded-lg focus:ring-2 focus:ring-green-500 outline-none transition" 
+                      placeholder="Interesse em soja..." 
+                    />
                   </div>
-                  <button onClick={() => window.open(whatsAppLink, '_blank')} className="w-full bg-green-600 text-white font-bold py-4 rounded-lg hover:bg-green-700 transition shadow-lg hover:shadow-green-200 mt-4 flex items-center justify-center gap-2">
+                  {/* BOTÃO QUE ENVIA MENSAGEM DINÂMICA */}
+                  <button 
+                    onClick={handleEnviarMensagem} 
+                    className="w-full bg-green-600 text-white font-bold py-4 rounded-lg hover:bg-green-700 transition shadow-lg hover:shadow-green-200 mt-4 flex items-center justify-center gap-2 cursor-pointer"
+                  >
                     <MessageCircle size={20} /> Iniciar Conversa no WhatsApp
                   </button>
                 </div>
@@ -281,18 +316,14 @@ export default function LandingPage() {
         </div>
       </footer>
 
-      {/* WHATSAPP FLUTUANTE - Com animação de pulso */}
-      <a href={whatsAppLink} target="_blank" className="fixed bottom-8 right-8 z-50 group">
-        <div className="absolute inset-0 bg-green-400 rounded-full animate-ping opacity-75"></div>
+      {/* WHATSAPP FLUTUANTE */}
+      <a href={whatsAppLinkPadrao} target="_blank" className="fixed bottom-8 right-8 z-50 group">
         <div className="relative bg-green-500 text-white p-4 rounded-full shadow-2xl hover:bg-green-600 transition-transform hover:-translate-y-2 flex items-center justify-center">
           <MessageCircle size={32} />
         </div>
-        <span className="absolute right-full mr-4 top-1/2 -translate-y-1/2 bg-white text-green-800 px-3 py-1 rounded shadow-lg text-sm font-bold whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-          Fale Conosco
-        </span>
       </a>
 
-      {/* MODAL (LIGHTBOX) */}
+      {/* MODAL */}
       {produtoSelecionado && (
         <div 
           className="fixed inset-0 z-[60] bg-black/90 backdrop-blur-md flex items-center justify-center p-4 animate-[fadeIn_0.3s_ease-out]"
@@ -302,19 +333,18 @@ export default function LandingPage() {
             className="bg-white rounded-2xl shadow-2xl max-w-5xl w-full overflow-hidden flex flex-col md:flex-row relative animate-[scaleIn_0.3s_ease-out]"
             onClick={(e) => e.stopPropagation()}
           >
-            <button onClick={() => setProdutoSelecionado(null)} className="absolute top-4 right-4 bg-white/90 p-2 rounded-full hover:bg-gray-100 text-gray-800 z-10 transition-colors">
+            <button onClick={() => setProdutoSelecionado(null)} className="absolute top-4 right-4 bg-white/90 p-2 rounded-full hover:bg-gray-100 text-gray-800 z-10 transition-colors cursor-pointer">
               <X size={24} />
             </button>
 
             <div className="w-full md:w-1/2 h-64 md:h-auto bg-gray-100 relative">
               <img src={produtoSelecionado.imagemUrl} alt={produtoSelecionado.titulo} className="w-full h-full object-cover" />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent md:hidden"></div>
             </div>
 
             <div className="w-full md:w-1/2 p-8 md:p-12 flex flex-col relative">
               <span className="text-xs font-bold text-green-600 uppercase tracking-widest mb-3 flex items-center gap-2">
                 <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                {produtoSelecionado.categoria === 'graos' ? 'Grãos Selecionados' : 'Lavoura'}
+                {produtoSelecionado.categoria === 'graos' ? 'Grãos' : 'Lavoura'}
               </span>
               <h3 className="text-3xl md:text-4xl font-bold text-gray-900 mb-6 leading-tight">{produtoSelecionado.titulo}</h3>
               
@@ -323,7 +353,7 @@ export default function LandingPage() {
               </div>
 
               <div className="mt-auto pt-6 border-t border-gray-100">
-                <button onClick={() => window.open(whatsAppLink, '_blank')} className="w-full bg-green-600 text-white font-bold py-4 rounded-xl hover:bg-green-700 transition flex items-center justify-center gap-3 shadow-lg hover:shadow-green-200 hover:-translate-y-1">
+                <button onClick={() => window.open(whatsAppLinkPadrao, '_blank')} className="w-full bg-green-600 text-white font-bold py-4 rounded-xl hover:bg-green-700 transition flex items-center justify-center gap-3 shadow-lg hover:shadow-green-200 hover:-translate-y-1 cursor-pointer">
                   <MessageCircle size={22} />
                   Solicitar Cotação / Informações
                 </button>
