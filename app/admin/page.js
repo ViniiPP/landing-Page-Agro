@@ -13,21 +13,35 @@ import {
   deleteDoc,
   updateDoc,
   doc,
-} from "firebase/firestore";
-import { Trash2, Upload, LogOut, Pencil, XCircle } from "lucide-react";
+  setDoc,
+  getDoc,
+} from "firebase/firestore"; // Adicionei setDoc e getDoc
+import {
+  Trash2,
+  Upload,
+  LogOut,
+  Pencil,
+  XCircle,
+  Save,
+  Settings,
+} from "lucide-react";
 
 export default function AdminPage() {
   const [user, setUser] = useState(null);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  // Estado do formulário
+  // --- ESTADOS DE CONFIGURAÇÃO GERAL ---
+  const [configEmail, setConfigEmail] = useState("");
+  const [configTelefone, setConfigTelefone] = useState("");
+  const [configEndereco, setConfigEndereco] = useState("");
+  const [loadingConfig, setLoadingConfig] = useState(false);
+
+  // --- ESTADOS DE PRODUTOS ---
   const [titulo, setTitulo] = useState("");
   const [descricao, setDescricao] = useState("");
   const [categoria, setCategoria] = useState("graos");
   const [imagem, setImagem] = useState(null);
-
-  // Estado de controle
   const [loading, setLoading] = useState(false);
   const [produtos, setProdutos] = useState([]);
   const [editingId, setEditingId] = useState(null);
@@ -36,14 +50,23 @@ export default function AdminPage() {
   const CLOUD_NAME = "dzvaouj9v"; // acesso no painel https://console.cloudinary.com
   const UPLOAD_PRESET = "ml_default"; // acesso no painel https://console.cloudinary.com
 
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
-      if (currentUser) fetchProdutos();
-    });
-    return () => unsubscribe();
-  }, []);
+  // --- FUNÇÕES DE CONFIGURAÇÃO (NOVO) ---
+  const fetchConfig = async () => {
+    try {
+      const docRef = doc(db, "configuracoes", "contato");
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        setConfigEmail(data.email || "");
+        setConfigTelefone(data.telefone || "");
+        setConfigEndereco(data.endereco || "");
+      }
+    } catch (error) {
+      console.error("Erro ao buscar configs:", error);
+    }
+  };
 
+    // FUNÇÕES DE PRODUTOS
   const fetchProdutos = async () => {
     const querySnapshot = await getDocs(collection(db, "produtos"));
     setProdutos(
@@ -51,28 +74,52 @@ export default function AdminPage() {
     );
   };
 
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+      if (currentUser) {
+        fetchProdutos();
+        fetchConfig(); // Busca as configurações ao logar
+      }
+    });
+    return () => unsubscribe();
+  }, []);
+  
+  const handleSaveConfig = async (e) => {
+    e.preventDefault();
+    setLoadingConfig(true);
+    try {
+      // Usamos setDoc com o ID fixo "contato" para sempre sobrescrever o mesmo lugar
+      await setDoc(doc(db, "configuracoes", "contato"), {
+        email: configEmail,
+        telefone: configTelefone,
+        endereco: configEndereco,
+      });
+      alert("Dados de contato atualizados no site!");
+    } catch (error) {
+      alert("Erro ao salvar configs: " + error.message);
+    }
+    setLoadingConfig(false);
+  };
+
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
       await signInWithEmailAndPassword(auth, email, password);
     } catch (error) {
-      alert("Erro ao logar: " + error.message);
+      alert("Erro: " + error.message);
     }
   };
 
-  // Preenche o formulário para edição
   const handleEdit = (produto) => {
     setTitulo(produto.titulo);
     setDescricao(produto.descricao);
     setCategoria(produto.categoria);
     setEditingId(produto.id);
-    setImagem(null); // Reseta o input de arquivo (usuário só põe se quiser trocar)
-
-    // Rola a página para cima suavemente
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    setImagem(null);
+    window.scrollTo({ top: 500, behavior: "smooth" }); // Ajustei o scroll
   };
 
-  // Cancela a edição e limpa o form
   const handleCancelEdit = () => {
     setTitulo("");
     setDescricao("");
@@ -88,76 +135,59 @@ export default function AdminPage() {
     try {
       let urlFinal = null;
 
-      // 1. Lógica da Imagem
       if (imagem) {
-        // Se o usuário selecionou um arquivo, faz upload para o Cloudinary
         const formData = new FormData();
         formData.append("file", imagem);
         formData.append("upload_preset", UPLOAD_PRESET);
-
         const res = await fetch(
           `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`,
-          {
-            method: "POST",
-            body: formData,
-          }
+          { method: "POST", body: formData }
         );
-
         const data = await res.json();
-        if (!data.secure_url) throw new Error("Falha no upload da imagem");
         urlFinal = data.secure_url;
       } else if (editingId) {
-        // Se está editando e NÃO selecionou imagem nova, mantém a antiga
         const produtoAtual = produtos.find((p) => p.id === editingId);
         urlFinal = produtoAtual.imagemUrl;
       } else {
-        // Se está criando e não tem imagem
-        alert("Selecione uma imagem para criar um novo produto!");
+        alert("Selecione uma imagem!");
         setLoading(false);
         return;
       }
-
-      // 2. Salvar no Banco de Dados (Criar ou Atualizar)
+      
       const dadosProduto = {
         titulo,
         descricao,
         categoria,
         imagemUrl: urlFinal,
-        updatedAt: new Date(), // Atualiza a data
+        updatedAt: new Date(),
       };
 
       if (editingId) {
-        // MODO EDIÇÃO: Atualiza o documento existente
-        const docRef = doc(db, "produtos", editingId);
-        await updateDoc(docRef, dadosProduto);
-        alert("Produto atualizado com sucesso!");
+        await updateDoc(doc(db, "produtos", editingId), dadosProduto);
+        alert("Atualizado!");
       } else {
-        // MODO CRIAÇÃO: Cria um novo documento
         await addDoc(collection(db, "produtos"), {
           ...dadosProduto,
           createdAt: new Date(),
         });
-        alert("Produto cadastrado com sucesso!");
+        alert("Cadastrado!");
       }
-
-      // 3. Limpar e atualizar
-      handleCancelEdit(); // Limpa o form
-      fetchProdutos(); // Recarrega a lista
+      handleCancelEdit();
+      fetchProdutos();
     } catch (error) {
       console.error(error);
-      alert("Erro ao salvar: " + error.message);
+      alert("Erro ao salvar.");
     }
     setLoading(false);
   };
 
   const handleDelete = async (id) => {
-    if (confirm("Tem certeza que deseja apagar?")) {
+    if (confirm("Apagar produto?")) {
       await deleteDoc(doc(db, "produtos", id));
       fetchProdutos();
     }
   };
 
-  // TELA DE LOGIN
   if (!user) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-100">
@@ -188,13 +218,12 @@ export default function AdminPage() {
     );
   }
 
-  // TELA DO DASHBOARD
   return (
     <div className="min-h-screen bg-gray-50 p-8">
       <div className="max-w-4xl mx-auto">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold text-green-800">
-            Gerenciar Produtos
+            Painel Administrativo
           </h1>
           <button
             onClick={() => signOut(auth)}
@@ -204,7 +233,60 @@ export default function AdminPage() {
           </button>
         </div>
 
-        {/* Formulário de Cadastro / Edição */}
+        {/* --- NOVO: FORMULÁRIO DE DADOS DE CONTATO --- */}
+        <div className="bg-white p-6 rounded-lg shadow-md mb-10 border-l-4 border-yellow-500">
+          <h2 className="text-xl font-bold mb-4 flex items-center gap-2 text-gray-800">
+            <Settings size={20} /> Dados de Contato do Site
+          </h2>
+          <form onSubmit={handleSaveConfig} className="grid gap-4">
+            <div className="grid md:grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-bold text-gray-600">
+                  Telefone / WhatsApp (ex: (00) 00000-0000)
+                </label>
+                <input
+                  type="text"
+                  placeholder="(00) 00000-0000"
+                  value={configTelefone}
+                  onChange={(e) => setConfigTelefone(e.target.value)}
+                  className="border p-2 rounded w-full placeholder-black text-gray-600"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-bold text-gray-600">
+                  Email de Contato
+                </label>
+                <input
+                  type="email"
+                  placeholder="contato@empresa.com"
+                  value={configEmail}
+                  onChange={(e) => setConfigEmail(e.target.value)}
+                  className="border p-2 rounded w-full placeholder-black text-gray-600"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="text-sm font-bold text-gray-600">
+                Endereço Completo
+              </label>
+              <input
+                type="text"
+                placeholder="Rodovia X, KM Y - Cidade/UF"
+                value={configEndereco}
+                onChange={(e) => setConfigEndereco(e.target.value)}
+                className="border p-2 rounded w-full placeholder-black text-gray-600"
+              />
+            </div>
+            <button
+              disabled={loadingConfig}
+              className="bg-yellow-500 text-white p-2 rounded font-bold hover:bg-yellow-600 w-full md:w-auto cursor-pointer"
+            >
+              {loadingConfig ? "Salvando..." : "Atualizar Dados de Contato"}
+            </button>
+          </form>
+        </div>
+
+        {/* --- FORMULÁRIO DE PRODUTOS --- */}
         <div
           className={`p-6 rounded-lg shadow-md mb-10 transition-colors ${
             editingId ? "bg-blue-50 border-2 border-blue-200" : "bg-white"
@@ -217,9 +299,9 @@ export default function AdminPage() {
             {editingId && (
               <button
                 onClick={handleCancelEdit}
-                className="text-sm text-gray-500 flex items-center gap-1 hover:text-red-500 cursor-pointer"
+                className="text-sm text-gray-500 flex items-center gap-1 hover:text-red-500"
               >
-                <XCircle size={16} /> Cancelar Edição
+                <XCircle size={16} /> Cancelar
               </button>
             )}
           </div>
@@ -230,14 +312,14 @@ export default function AdminPage() {
               placeholder="Título"
               value={titulo}
               onChange={(e) => setTitulo(e.target.value)}
-              className="border p-2 rounded w-full placeholder-black text-black"
+              className="border p-2 rounded w-full placeholder-gray-600 text-black"
               required
             />
             <textarea
               placeholder="Descrição"
               value={descricao}
               onChange={(e) => setDescricao(e.target.value)}
-              className="border p-2 rounded w-full placeholder-black text-black"
+              className="border p-2 rounded w-full placeholder-gray-600 text-black"
               required
             />
             <div className="flex gap-4 flex-col md:flex-row">
@@ -256,22 +338,13 @@ export default function AdminPage() {
                   className="border p-2 rounded w-full text-black bg-white cursor-pointer"
                   accept="image/*"
                 />
-                {editingId && !imagem && (
-                  <p className="text-xs text-gray-500 mt-1 ml-1">
-                    Deixe vazio para manter a imagem atual.
-                  </p>
-                )}
               </div>
             </div>
-
             <button
               disabled={loading}
-              className={`text-white cursor-pointer p-3 rounded flex items-center justify-center gap-2 transition disabled:opacity-50 
-                ${
-                  editingId
-                    ? "bg-blue-600 hover:bg-blue-700"
-                    : "bg-green-600 hover:bg-green-700"
-                }`}
+              className={`text-white p-3 rounded flex items-center justify-center gap-2 transition disabled:opacity-50 cursor-pointer ${
+                editingId ? "bg-blue-600" : "bg-green-600"
+              }`}
             >
               {loading
                 ? "Salvando..."
@@ -282,7 +355,7 @@ export default function AdminPage() {
           </form>
         </div>
 
-        {/* Lista de Produtos */}
+        {/* LISTA DE PRODUTOS */}
         <div className="grid gap-4">
           {produtos.map((prod) => (
             <div
@@ -302,20 +375,16 @@ export default function AdminPage() {
                   </p>
                 </div>
               </div>
-
-              {/* botoes de editar e excluir */}
               <div className="flex gap-2">
                 <button
                   onClick={() => handleEdit(prod)}
-                  className="bg-blue-100 text-blue-600 p-2 rounded hover:bg-blue-200 transition cursor-pointer"
-                  title="Editar"
+                  className="bg-blue-100 text-blue-600 p-2 rounded hover:bg-blue-200 cursor-pointer"
                 >
                   <Pencil size={20} />
                 </button>
                 <button
                   onClick={() => handleDelete(prod.id)}
-                  className="bg-red-100 text-red-600 p-2 rounded hover:bg-red-200 transition cursor-pointer"
-                  title="Excluir"
+                  className="bg-red-100 text-red-600 p-2 rounded hover:bg-red-200 cursor-pointer"
                 >
                   <Trash2 size={20} />
                 </button>
