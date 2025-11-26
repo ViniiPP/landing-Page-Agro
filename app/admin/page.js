@@ -15,7 +15,7 @@ import {
   doc,
   setDoc,
   getDoc,
-} from "firebase/firestore"; // Adicionei setDoc e getDoc
+} from "firebase/firestore";
 import {
   Trash2,
   Upload,
@@ -31,13 +31,13 @@ export default function AdminPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  // --- ESTADOS DE CONFIGURAÇÃO GERAL ---
+  // ESTADOS DE CONFIGURAÇÃO GERAL
   const [configEmail, setConfigEmail] = useState("");
   const [configTelefone, setConfigTelefone] = useState("");
   const [configEndereco, setConfigEndereco] = useState("");
   const [loadingConfig, setLoadingConfig] = useState(false);
 
-  // --- ESTADOS DE PRODUTOS ---
+  // ESTADOS DE PRODUTOS
   const [titulo, setTitulo] = useState("");
   const [descricao, setDescricao] = useState("");
   const [categoria, setCategoria] = useState("graos");
@@ -47,8 +47,8 @@ export default function AdminPage() {
   const [editingId, setEditingId] = useState(null);
 
   // CONFIGURAÇÕES DO CLOUDINARY
-  const CLOUD_NAME = "dzvaouj9v"; // acesso no painel https://console.cloudinary.com
-  const UPLOAD_PRESET = "ml_default"; // acesso no painel https://console.cloudinary.com
+  const CLOUD_NAME = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME; // acesso no painel https://console.cloudinary.com
+  const UPLOAD_PRESET = process.env.NEXT_PUBLIC_CLOUDINARY_PRESET; // acesso no painel https://console.cloudinary.com
 
   // --- FUNÇÕES DE CONFIGURAÇÃO (NOVO) ---
   const fetchConfig = async () => {
@@ -89,7 +89,7 @@ export default function AdminPage() {
     e.preventDefault();
     setLoadingConfig(true);
     try {
-      // Usamos setDoc com o ID fixo "contato" para sempre sobrescrever o mesmo lugar
+      // setDoc com o ID fixo "contato" para sempre sobrescrever o mesmo lugar
       await setDoc(doc(db, "configuracoes", "contato"), {
         email: configEmail,
         telefone: configTelefone,
@@ -117,7 +117,7 @@ export default function AdminPage() {
     setCategoria(produto.categoria);
     setEditingId(produto.id);
     setImagem(null);
-    window.scrollTo({ top: 500, behavior: "smooth" }); // Ajustei o scroll
+    window.scrollTo({ top: 500, behavior: "smooth" });
   };
 
   const handleCancelEdit = () => {
@@ -233,7 +233,7 @@ export default function AdminPage() {
           </button>
         </div>
 
-        {/* --- NOVO: FORMULÁRIO DE DADOS DE CONTATO --- */}
+        {/* FORMULÁRIO DE DADOS DE CONTATO */}
         <div className="bg-white p-6 rounded-lg shadow-md mb-10 border-l-4 border-yellow-500">
           <h2 className="text-xl font-bold mb-4 flex items-center gap-2 text-gray-800">
             <Settings size={20} /> Dados de Contato do Site
@@ -286,15 +286,15 @@ export default function AdminPage() {
           </form>
         </div>
 
-        {/* --- FORMULÁRIO DE PRODUTOS --- */}
+        {/* FORMULÁRIO DE PRODUTOS */}
         <div
-          className={`p-6 rounded-lg shadow-md mb-10 transition-colors ${
+          className={`p-6 rounded-lg shadow-md mb-10 transition-colors  ${
             editingId ? "bg-blue-50 border-2 border-blue-200" : "bg-white"
           }`}
         >
-          <div className="flex justify-between items-center mb-4">
+          <div className="flex justify-between items-center mb-4 ">
             <h2 className="text-xl font-bold text-black">
-              {editingId ? "Editar Produto" : "Novo Produto"}
+              {editingId ? "Editar Produto" : " Novo Produto"}
             </h2>
             {editingId && (
               <button
