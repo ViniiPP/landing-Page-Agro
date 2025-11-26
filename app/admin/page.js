@@ -15,7 +15,7 @@ import {
   doc,
   setDoc,
   getDoc,
-} from "firebase/firestore"; // Adicionei setDoc e getDoc
+} from "firebase/firestore";
 import {
   Trash2,
   Upload,
@@ -47,10 +47,10 @@ export default function AdminPage() {
   const [editingId, setEditingId] = useState(null);
 
   // CONFIGURAÇÕES DO CLOUDINARY
-  const CLOUD_NAME = "dzvaouj9v"; // acesso no painel https://console.cloudinary.com
-  const UPLOAD_PRESET = "ml_default"; // acesso no painel https://console.cloudinary.com
+  const CLOUD_NAME = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME; // acesso no painel https://console.cloudinary.com
+  const UPLOAD_PRESET = process.env.NEXT_PUBLIC_CLOUDINARY_PRESET; // acesso no painel https://console.cloudinary.com
 
-  // --- FUNÇÕES DE CONFIGURAÇÃO (NOVO) ---
+  // FUNÇÕES DE CONFIGURAÇÃO
   const fetchConfig = async () => {
     try {
       const docRef = doc(db, "configuracoes", "contato");
@@ -89,7 +89,7 @@ export default function AdminPage() {
     e.preventDefault();
     setLoadingConfig(true);
     try {
-      // Usamos setDoc com o ID fixo "contato" para sempre sobrescrever o mesmo lugar
+      // setDoc com o ID fixo "contato" para sempre sobrescrever o mesmo lugar
       await setDoc(doc(db, "configuracoes", "contato"), {
         email: configEmail,
         telefone: configTelefone,
@@ -117,7 +117,7 @@ export default function AdminPage() {
     setCategoria(produto.categoria);
     setEditingId(produto.id);
     setImagem(null);
-    window.scrollTo({ top: 500, behavior: "smooth" }); // Ajustei o scroll
+    window.scrollTo({ top: 500, behavior: "smooth" });
   };
 
   const handleCancelEdit = () => {
