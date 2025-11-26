@@ -217,7 +217,7 @@ export default function AdminPage() {
             {editingId && (
               <button
                 onClick={handleCancelEdit}
-                className="text-sm text-gray-500 flex items-center gap-1 hover:text-red-500"
+                className="text-sm text-gray-500 flex items-center gap-1 hover:text-red-500 cursor-pointer"
               >
                 <XCircle size={16} /> Cancelar Edição
               </button>
