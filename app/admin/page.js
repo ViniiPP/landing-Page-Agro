@@ -50,7 +50,7 @@ export default function AdminPage() {
   const CLOUD_NAME = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME; // acesso no painel https://console.cloudinary.com
   const UPLOAD_PRESET = process.env.NEXT_PUBLIC_CLOUDINARY_PRESET; // acesso no painel https://console.cloudinary.com
 
-  // --- FUNÇÕES DE CONFIGURAÇÃO (NOVO) ---
+  // FUNÇÕES DE CONFIGURAÇÃO
   const fetchConfig = async () => {
     try {
       const docRef = doc(db, "configuracoes", "contato");
