@@ -24,13 +24,36 @@ import {
   XCircle,
   Save,
   Settings,
-  Image as ImageIcon, // Adicionei ícone de imagem
+  Image as ImageIcon,
+  AlertTriangle, // Ícone de Alerta
+  CheckCircle,   // Ícone de Sucesso
+  X              // Ícone de Fechar
 } from "lucide-react";
+
+const scrollHideStyle = `
+  .scrollbar-hide::-webkit-scrollbar {
+      display: none;
+  }
+  .scrollbar-hide {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+  }
+  ::-webkit-scrollbar {
+  width: 7px;
+}
+`;
 
 export default function AdminPage() {
   const [user, setUser] = useState(null);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+
+  // --- ESTADOS DOS MODAIS (NOVO) ---
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState(null);
+  
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
 
   // --- ESTADOS DE CONFIGURAÇÃO GERAL ---
   const [configEmail, setConfigEmail] = useState("");
@@ -43,17 +66,39 @@ export default function AdminPage() {
   const [descricao, setDescricao] = useState("");
   const [categoria, setCategoria] = useState("graos");
   const [imagem, setImagem] = useState(null);
-  const [preview, setPreview] = useState(null); // NOVO: Estado para o preview da foto
+  const [preview, setPreview] = useState(null); // Preview da imagem
   
   const [loading, setLoading] = useState(false);
   const [produtos, setProdutos] = useState([]);
   const [editingId, setEditingId] = useState(null);
 
-  // CONFIGURAÇÕES DO CLOUDINARY
   const CLOUD_NAME = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME; 
   const UPLOAD_PRESET = process.env.NEXT_PUBLIC_CLOUDINARY_PRESET; 
 
-  // FUNÇÕES DE CONFIGURAÇÃO
+  // --- FUNÇÕES AUXILIARES PARA MODAIS ---
+  const openSuccessModal = (msg) => {
+    setSuccessMessage(msg);
+    setShowSuccessModal(true);
+    // Fecha sozinho após 3 segundos
+    setTimeout(() => setShowSuccessModal(false), 3000);
+  };
+
+  const confirmDelete = (id) => {
+    setItemToDelete(id);
+    setShowDeleteModal(true);
+  };
+
+  const executeDelete = async () => {
+    if (itemToDelete) {
+      await deleteDoc(doc(db, "produtos", itemToDelete));
+      fetchProdutos();
+      setShowDeleteModal(false);
+      setItemToDelete(null);
+      openSuccessModal("Produto removido com sucesso!");
+    }
+  };
+
+  // --- CARREGAMENTO DE DADOS ---
   const fetchConfig = async () => {
     try {
       const docRef = doc(db, "configuracoes", "contato");
@@ -69,7 +114,6 @@ export default function AdminPage() {
     }
   };
 
-  // FUNÇÕES DE PRODUTOS
   const fetchProdutos = async () => {
     const querySnapshot = await getDocs(collection(db, "produtos"));
     setProdutos(
@@ -88,6 +132,7 @@ export default function AdminPage() {
     return () => unsubscribe();
   }, []);
   
+  // --- SALVAR CONFIGURAÇÕES ---
   const handleSaveConfig = async (e) => {
     e.preventDefault();
     setLoadingConfig(true);
@@ -97,13 +142,14 @@ export default function AdminPage() {
         telefone: configTelefone,
         endereco: configEndereco,
       });
-      alert("Dados de contato atualizados no site!");
+      openSuccessModal("Dados de contato atualizados!");
     } catch (error) {
       alert("Erro ao salvar configs: " + error.message);
     }
     setLoadingConfig(false);
   };
 
+  // --- LOGIN ---
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
@@ -113,12 +159,12 @@ export default function AdminPage() {
     }
   };
 
-  // NOVO: Função para gerar o preview ao selecionar arquivo
+  // PRODUTOS: PREVIEW E UPLOAD 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
       setImagem(file);
-      setPreview(URL.createObjectURL(file)); // Cria URL temporária para visualização
+      setPreview(URL.createObjectURL(file));
     }
   };
 
@@ -126,9 +172,9 @@ export default function AdminPage() {
     setTitulo(produto.titulo);
     setDescricao(produto.descricao);
     setCategoria(produto.categoria);
-    setPreview(produto.imagemUrl); // NOVO: Mostra a imagem atual no preview
     setEditingId(produto.id);
     setImagem(null);
+    setPreview(produto.imagemUrl);
     window.scrollTo({ top: 500, behavior: "smooth" });
   };
 
@@ -137,7 +183,7 @@ export default function AdminPage() {
     setDescricao("");
     setCategoria("graos");
     setImagem(null);
-    setPreview(null); // Limpa o preview
+    setPreview(null);
     setEditingId(null);
   };
 
@@ -177,13 +223,13 @@ export default function AdminPage() {
 
       if (editingId) {
         await updateDoc(doc(db, "produtos", editingId), dadosProduto);
-        alert("Atualizado!");
+        openSuccessModal("Produto atualizado com sucesso!");
       } else {
         await addDoc(collection(db, "produtos"), {
           ...dadosProduto,
           createdAt: new Date(),
         });
-        alert("Cadastrado!");
+        openSuccessModal("Produto cadastrado com sucesso!");
       }
       handleCancelEdit();
       fetchProdutos();
@@ -192,13 +238,6 @@ export default function AdminPage() {
       alert("Erro ao salvar.");
     }
     setLoading(false);
-  };
-
-  const handleDelete = async (id) => {
-    if (confirm("Apagar produto?")) {
-      await deleteDoc(doc(db, "produtos", id));
-      fetchProdutos();
-    }
   };
 
   if (!user) {
@@ -237,8 +276,10 @@ export default function AdminPage() {
     );
   }
 
+  // PÁGINA ADMINISTRATIVA
   return (
     <div className="min-h-screen bg-gray-50 p-8">
+      <style>{scrollHideStyle}</style>
       <div className="max-w-4xl mx-auto">
         <div className="flex justify-between items-center mb-8 mt-4">
           <h1 className="text-3xl font-bold text-green-800">
@@ -368,7 +409,7 @@ export default function AdminPage() {
                   <div className="flex-1">
                     <input
                       type="file"
-                      onChange={handleFileChange} // Usando a nova função
+                      onChange={handleFileChange}
                       className="border p-2 rounded w-full text-black bg-white cursor-pointer file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100"
                       accept="image/*"
                     />
@@ -435,8 +476,9 @@ export default function AdminPage() {
                 >
                   <Pencil size={20} />
                 </button>
+                {/* BOTÃO DELETAR CHAMA O MODAL */}
                 <button
-                  onClick={() => handleDelete(prod.id)}
+                  onClick={() => confirmDelete(prod.id)}
                   className="bg-red-100 text-red-600 p-2 rounded hover:bg-red-200 cursor-pointer transition"
                   title="Excluir"
                 >
@@ -447,6 +489,55 @@ export default function AdminPage() {
           ))}
         </div>
       </div>
+
+      {/* --- MODAL DE CONFIRMAÇÃO DE EXCLUSÃO --- */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fadeIn">
+          <div className="bg-white rounded-lg shadow-2xl w-full max-w-sm overflow-hidden animate-scaleIn">
+            <div className="p-6 text-center">
+              <div className="mx-auto w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-4">
+                <AlertTriangle className="w-8 h-8 text-red-600" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">Excluir Produto?</h3>
+              <p className="text-gray-500 text-sm">
+                Tem certeza que deseja remover este item? Essa ação não pode ser desfeita.
+              </p>
+            </div>
+            <div className="flex border-t border-gray-100 bg-gray-50">
+              <button 
+                onClick={() => setShowDeleteModal(false)}
+                className="flex-1 py-4 text-gray-600 font-bold hover:bg-gray-100 transition border-r border-gray-100 cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button 
+                onClick={executeDelete}
+                className="flex-1 py-4 text-red-600 font-bold hover:bg-red-50 transition cursor-pointer"
+              >
+                Sim, Excluir
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* --- MODAL DE SUCESSO --- */}
+      {showSuccessModal && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-start sm:justify-end p-6 pointer-events-none">
+          <div className="bg-white rounded-lg shadow-2xl border-l-4 border-green-500 p-4 flex items-center gap-4 animate-slideIn pointer-events-auto max-w-sm w-full">
+            <div className="bg-green-100 p-2 rounded-full">
+              <CheckCircle className="w-6 h-6 text-green-600" />
+            </div>
+            <div className="flex-1">
+              <h4 className="font-bold text-gray-800">Sucesso!</h4>
+              <p className="text-sm text-gray-600">{successMessage}</p>
+            </div>
+            <button onClick={() => setShowSuccessModal(false)} className="text-gray-400 hover:text-gray-600">
+              <X size={18} />
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
