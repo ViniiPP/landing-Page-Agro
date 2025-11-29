@@ -393,7 +393,7 @@ export default function LandingPage() {
                       </div>
                       <h4 className="text-xl font-bold text-gray-800 mb-3 group-hover:text-green-700 transition">{item.titulo}</h4>
                       <p className="text-gray-500 text-sm line-clamp-3 leading-relaxed mb-4 flex-1">{item.descricao}</p>
-                      <button onClick={() => setProdutoSelecionado(item)} className="text-green-600 font-bold hover:text-green-800 flex items-center gap-1 text-sm mt-auto">Saiba mais <ChevronRight size={16} /></button>
+                      <button onClick={() => setProdutoSelecionado(item)} className="text-green-600 font-bold hover:text-green-800 flex items-center gap-1 text-sm mt-auto cursor-pointer">Saiba mais <ChevronRight size={16} /></button>
                     </div>
                   </div>
                 </FadeIn>
@@ -459,7 +459,7 @@ export default function LandingPage() {
                     <label className="block text-sm font-bold mb-2 text-gray-600">Assunto</label>
                     <input type="text" value={formAssunto} onChange={(e) => setFormAssunto(e.target.value)} className="w-full bg-gray-50 border border-gray-200 p-3 rounded-lg focus:ring-2 focus:ring-green-500 outline-none transition" placeholder="Interesse em soja..." />
                   </div>
-                  <button onClick={handleEnviarMensagem} className="w-full bg-green-600 text-white font-bold py-3 rounded-lg hover:bg-green-700 transition shadow-lg hover:shadow-green-200 mt-7 flex items-center justify-center gap-2 cursor-pointer">
+                  <button onClick={handleEnviarMensagem} className="w-full bg-green-600 text-white font-bold py-3 rounded-lg hover:bg-green-700 transition shadow-lg hover:shadow-green-200 mt-4 flex items-center justify-center gap-2 cursor-pointer">
                     <MessageCircle size={20} /> Iniciar Conversa no WhatsApp
                   </button>
                 </div>
