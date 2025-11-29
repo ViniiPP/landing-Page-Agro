@@ -13,6 +13,9 @@ const scrollHideStyle = `
       -ms-overflow-style: none;
       scrollbar-width: none;
   }
+  ::-webkit-scrollbar {
+  width: 7px;
+}
 `;
 
 function FadeIn({ children, delay = 0, className = "" }) {
@@ -443,6 +446,8 @@ export default function LandingPage() {
                   </div>
                 </div>
               </div>
+
+              {/* Formulário de Contato */}
               <div className="bg-white p-10 rounded-3xl shadow-2xl text-gray-800">
                 <h4 className="text-2xl font-bold mb-6 text-green-900">Envie uma mensagem</h4>
                 <div className="space-y-4">
@@ -454,7 +459,7 @@ export default function LandingPage() {
                     <label className="block text-sm font-bold mb-2 text-gray-600">Assunto</label>
                     <input type="text" value={formAssunto} onChange={(e) => setFormAssunto(e.target.value)} className="w-full bg-gray-50 border border-gray-200 p-3 rounded-lg focus:ring-2 focus:ring-green-500 outline-none transition" placeholder="Interesse em soja..." />
                   </div>
-                  <button onClick={handleEnviarMensagem} className="w-full bg-green-600 text-white font-bold py-4 rounded-lg hover:bg-green-700 transition shadow-lg hover:shadow-green-200 mt-4 flex items-center justify-center gap-2 cursor-pointer">
+                  <button onClick={handleEnviarMensagem} className="w-full bg-green-600 text-white font-bold py-3 rounded-lg hover:bg-green-700 transition shadow-lg hover:shadow-green-200 mt-7 flex items-center justify-center gap-2 cursor-pointer">
                     <MessageCircle size={20} /> Iniciar Conversa no WhatsApp
                   </button>
                 </div>
