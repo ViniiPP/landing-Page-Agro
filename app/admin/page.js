@@ -24,6 +24,7 @@ import {
   XCircle,
   Save,
   Settings,
+  Image as ImageIcon, // Adicionei ícone de imagem
 } from "lucide-react";
 
 export default function AdminPage() {
@@ -42,13 +43,15 @@ export default function AdminPage() {
   const [descricao, setDescricao] = useState("");
   const [categoria, setCategoria] = useState("graos");
   const [imagem, setImagem] = useState(null);
+  const [preview, setPreview] = useState(null); // NOVO: Estado para o preview da foto
+  
   const [loading, setLoading] = useState(false);
   const [produtos, setProdutos] = useState([]);
   const [editingId, setEditingId] = useState(null);
 
   // CONFIGURAÇÕES DO CLOUDINARY
-  const CLOUD_NAME = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME; // acesso no painel https://console.cloudinary.com
-  const UPLOAD_PRESET = process.env.NEXT_PUBLIC_CLOUDINARY_PRESET; // acesso no painel https://console.cloudinary.com
+  const CLOUD_NAME = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME; 
+  const UPLOAD_PRESET = process.env.NEXT_PUBLIC_CLOUDINARY_PRESET; 
 
   // FUNÇÕES DE CONFIGURAÇÃO
   const fetchConfig = async () => {
@@ -66,7 +69,7 @@ export default function AdminPage() {
     }
   };
 
-    // FUNÇÕES DE PRODUTOS
+  // FUNÇÕES DE PRODUTOS
   const fetchProdutos = async () => {
     const querySnapshot = await getDocs(collection(db, "produtos"));
     setProdutos(
@@ -79,7 +82,7 @@ export default function AdminPage() {
       setUser(currentUser);
       if (currentUser) {
         fetchProdutos();
-        fetchConfig(); // Busca as configurações ao logar
+        fetchConfig(); 
       }
     });
     return () => unsubscribe();
@@ -89,7 +92,6 @@ export default function AdminPage() {
     e.preventDefault();
     setLoadingConfig(true);
     try {
-      // setDoc com o ID fixo "contato" para sempre sobrescrever o mesmo lugar
       await setDoc(doc(db, "configuracoes", "contato"), {
         email: configEmail,
         telefone: configTelefone,
@@ -111,10 +113,20 @@ export default function AdminPage() {
     }
   };
 
+  // NOVO: Função para gerar o preview ao selecionar arquivo
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setImagem(file);
+      setPreview(URL.createObjectURL(file)); // Cria URL temporária para visualização
+    }
+  };
+
   const handleEdit = (produto) => {
     setTitulo(produto.titulo);
     setDescricao(produto.descricao);
     setCategoria(produto.categoria);
+    setPreview(produto.imagemUrl); // NOVO: Mostra a imagem atual no preview
     setEditingId(produto.id);
     setImagem(null);
     window.scrollTo({ top: 500, behavior: "smooth" });
@@ -125,6 +137,7 @@ export default function AdminPage() {
     setDescricao("");
     setCategoria("graos");
     setImagem(null);
+    setPreview(null); // Limpa o preview
     setEditingId(null);
   };
 
@@ -198,19 +211,25 @@ export default function AdminPage() {
           <h2 className="text-2xl font-bold mb-4 text-center text-green-800">
             Admin AgroSoja
           </h2>
-          <input
-            type="email"
-            placeholder="Email"
-            className="w-full border p-2 mb-4 rounded placeholder-black text-black"
-            onChange={(e) => setEmail(e.target.value)}
-          />
-          <input
-            type="password"
-            placeholder="Senha"
-            className="w-full border p-2 mb-6 rounded placeholder-black text-black"
-            onChange={(e) => setPassword(e.target.value)}
-          />
-          <button className="w-full bg-green-600 text-white p-2 rounded hover:bg-green-700 cursor-pointer">
+          <div className="mb-4">
+            <label className="block text-sm font-bold text-gray-700 mb-1">Email</label>
+            <input
+              type="email"
+              placeholder="admin@email.com"
+              className="w-full border p-2 rounded placeholder-gray-400 text-black"
+              onChange={(e) => setEmail(e.target.value)}
+            />
+          </div>
+          <div className="mb-6">
+            <label className="block text-sm font-bold text-gray-700 mb-1">Senha</label>
+            <input
+              type="password"
+              placeholder="******"
+              className="w-full border p-2 rounded placeholder-gray-400 text-black"
+              onChange={(e) => setPassword(e.target.value)}
+            />
+          </div>
+          <button className="w-full bg-green-600 text-white p-2 rounded hover:bg-green-700 cursor-pointer font-bold">
             Entrar
           </button>
         </form>
@@ -227,33 +246,33 @@ export default function AdminPage() {
           </h1>
           <button
             onClick={() => signOut(auth)}
-            className="flex items-center gap-2 text-red-600 font-bold cursor-pointer"
+            className="flex items-center gap-2 text-red-600 font-bold cursor-pointer hover:bg-red-50 p-2 rounded transition"
           >
             <LogOut size={18} /> Sair
           </button>
         </div>
 
-        {/* --- NOVO: FORMULÁRIO DE DADOS DE CONTATO --- */}
+        {/* DADOS DE CONTATO */}
         <div className="bg-white p-6 rounded-lg shadow-md mb-10 border-l-4 border-yellow-500">
-          <h2 className="text-xl font-bold mb-4 flex items-center gap-2 text-gray-800">
+          <h2 className="text-xl font-bold mb-6 flex items-center gap-2 text-gray-800 border-b pb-2">
             <Settings size={20} /> Dados de Contato do Site
           </h2>
           <form onSubmit={handleSaveConfig} className="grid gap-4">
-            <div className="grid md:grid-cols-2 gap-4">
+            <div className="grid md:grid-cols-2 gap-6">
               <div>
-                <label className="text-sm font-bold text-black">
-                  Telefone / WhatsApp (ex: (00) 00000-0000)
+                <label className="text-sm font-bold text-gray-700 mb-1 block">
+                  Telefone / WhatsApp
                 </label>
                 <input
                   type="text"
                   placeholder="(00) 00000-0000"
                   value={configTelefone}
                   onChange={(e) => setConfigTelefone(e.target.value)}
-                  className="border p-2 rounded w-full placeholder-gray-600 text-black"
+                  className="border p-2 rounded w-full placeholder-gray-400 text-black focus:ring-2 focus:ring-yellow-400 outline-none"
                 />
               </div>
               <div>
-                <label className="text-sm font-bold text-black">
+                <label className="text-sm font-bold text-gray-700 mb-1 block">
                   Email de Contato
                 </label>
                 <input
@@ -261,12 +280,12 @@ export default function AdminPage() {
                   placeholder="contato@empresa.com"
                   value={configEmail}
                   onChange={(e) => setConfigEmail(e.target.value)}
-                  className="border p-2 rounded w-full placeholder-gray-600 text-black"
+                  className="border p-2 rounded w-full placeholder-gray-400 text-black focus:ring-2 focus:ring-yellow-400 outline-none"
                 />
               </div>
             </div>
             <div>
-              <label className="text-sm font-bold text-black">
+              <label className="text-sm font-bold text-gray-700 mb-1 block">
                 Endereço Completo
               </label>
               <input
@@ -274,12 +293,12 @@ export default function AdminPage() {
                 placeholder="Rodovia X, KM Y - Cidade/UF"
                 value={configEndereco}
                 onChange={(e) => setConfigEndereco(e.target.value)}
-                className="border p-2 rounded w-full placeholder-gray-600 text-black"
+                className="border p-2 rounded w-full placeholder-gray-400 text-black focus:ring-2 focus:ring-yellow-400 outline-none"
               />
             </div>
             <button
               disabled={loadingConfig}
-              className="bg-yellow-500 text-white p-2 rounded font-bold hover:bg-yellow-600 w-full md:w-auto cursor-pointer"
+              className="bg-yellow-500 text-white p-2 rounded font-bold hover:bg-yellow-600 w-full md:w-auto cursor-pointer transition mt-2"
             >
               {loadingConfig ? "Salvando..." : "Atualizar Dados de Contato"}
             </button>
@@ -292,64 +311,89 @@ export default function AdminPage() {
             editingId ? "bg-blue-50 border-2 border-blue-200" : "bg-white"
           }`}
         >
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-bold text-black">
-              {editingId ? "Editar Produto" : "Novo Produto"}
+          <div className="flex justify-between items-center mb-6 border-b pb-2">
+            <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+              {editingId ? <><Pencil size={20}/> Editar Produto</> : <><Upload size={20}/> Novo Produto</>}
             </h2>
             {editingId && (
               <button
                 onClick={handleCancelEdit}
                 className="text-sm text-gray-500 flex items-center gap-1 hover:text-red-500 cursor-pointer"
               >
-                <XCircle size={16} /> Cancelar
+                <XCircle size={16} /> Cancelar Edição
               </button>
             )}
           </div>
 
           <form onSubmit={handleSave} className="grid gap-4">
-            <input
-              type="text"
-              placeholder="Título"
-              value={titulo}
-              onChange={(e) => setTitulo(e.target.value)}
-              className="border p-2 rounded w-full placeholder-gray-600 text-black"
-              required
-            />
-            <textarea
-              placeholder="Descrição"
-              value={descricao}
-              onChange={(e) => setDescricao(e.target.value)}
-              className="border p-2 rounded w-full placeholder-gray-600 text-black"
-              required
-            />
-            <div className="flex gap-4 flex-col md:flex-row">
-              <select
-                value={categoria}
-                onChange={(e) => setCategoria(e.target.value)}
-                className="border p-2 rounded text-black bg-white"
-              >
-                <option value="graos">Soja em Grãos</option>
-                <option value="plantada">Soja Plantada</option>
-              </select>
-              <div className="flex-1">
-                <input
-                  type="file"
-                  onChange={(e) => setImagem(e.target.files[0])}
-                  className="border p-2 rounded w-full text-black bg-white cursor-pointer"
-                  accept="image/*"
-                />
+            <div>
+              <label className="text-sm font-bold text-gray-700 mb-1 block">Título do Produto</label>
+              <input
+                type="text"
+                placeholder="Ex: Soja Safra 2024"
+                value={titulo}
+                onChange={(e) => setTitulo(e.target.value)}
+                className="border p-2 rounded w-full placeholder-gray-400 text-black focus:ring-2 focus:ring-green-500 outline-none"
+                required
+              />
+            </div>
+            
+            <div>
+              <label className="text-sm font-bold text-gray-700 mb-1 block">Descrição Detalhada</label>
+              <textarea
+                placeholder="Descreva as qualidades da soja..."
+                value={descricao}
+                onChange={(e) => setDescricao(e.target.value)}
+                className="border p-2 rounded w-full placeholder-gray-400 text-black h-24 focus:ring-2 focus:ring-green-500 outline-none"
+                required
+              />
+            </div>
+
+            <div className="flex gap-4 flex-col md:flex-row items-start">
+              <div className="w-full md:w-1/3">
+                <label className="text-sm font-bold text-gray-700 mb-1 block">Categoria</label>
+                <select
+                  value={categoria}
+                  onChange={(e) => setCategoria(e.target.value)}
+                  className="border p-2 rounded text-black bg-white w-full focus:ring-2 focus:ring-green-500 outline-none"
+                >
+                  <option value="graos">Soja em Grãos</option>
+                  <option value="plantada">Soja Plantada</option>
+                </select>
+              </div>
+              
+              <div className="flex-1 w-full">
+                <label className="text-sm font-bold text-gray-700 mb-1 block">Foto do Produto</label>
+                <div className="flex gap-4 items-center">
+                  <div className="flex-1">
+                    <input
+                      type="file"
+                      onChange={handleFileChange} // Usando a nova função
+                      className="border p-2 rounded w-full text-black bg-white cursor-pointer file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100"
+                      accept="image/*"
+                    />
+                  </div>
+                  {/* PREVIEW DA IMAGEM */}
+                  {preview && (
+                    <div className="relative w-16 h-16 rounded-lg overflow-hidden border-2 border-green-500 shadow-sm group">
+                      <img src={preview} alt="Preview" className="w-full h-full object-cover" />
+                      <div className="absolute inset-0 bg-black/20 group-hover:bg-black/0 transition"></div>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
+
             <button
               disabled={loading}
-              className={`text-white p-3 rounded flex items-center justify-center gap-2 transition disabled:opacity-50 cursor-pointer ${
-                editingId ? "bg-blue-600" : "bg-green-600"
+              className={`text-white p-3 rounded flex items-center justify-center gap-2 transition disabled:opacity-50 cursor-pointer mt-4 font-bold ${
+                editingId ? "bg-blue-600 hover:bg-blue-700" : "bg-green-600 hover:bg-green-700"
               }`}
             >
               {loading
-                ? "Salvando..."
+                ? "Processando..."
                 : editingId
-                ? "Atualizar Produto"
+                ? "Salvar Alterações"
                 : "Cadastrar Produto"}
             </button>
           </form>
@@ -357,34 +401,44 @@ export default function AdminPage() {
 
         {/* LISTA DE PRODUTOS */}
         <div className="grid gap-4">
+          <h3 className="text-lg font-bold text-gray-600 mb-2 pl-1 border-l-4 border-gray-300">
+            Produtos Cadastrados ({produtos.length})
+          </h3>
+          
+          {produtos.length === 0 && <p className="text-gray-400 italic">Nenhum produto cadastrado ainda.</p>}
+
           {produtos.map((prod) => (
             <div
               key={prod.id}
-              className="bg-white p-4 rounded shadow flex items-center justify-between border-l-4 border-green-500"
+              className="bg-white p-4 rounded shadow flex items-center justify-between border-l-4 border-green-500 hover:bg-gray-50 transition"
             >
               <div className="flex items-center gap-4">
-                <img
-                  src={prod.imagemUrl}
-                  alt={prod.titulo}
-                  className="w-16 h-16 object-cover rounded bg-gray-200"
-                />
+                <div className="w-20 h-20 rounded overflow-hidden bg-gray-200 border border-gray-300 flex-shrink-0">
+                  <img
+                    src={prod.imagemUrl}
+                    alt={prod.titulo}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
                 <div>
-                  <h3 className="font-bold text-gray-800">{prod.titulo}</h3>
-                  <p className="text-sm text-gray-500">
+                  <h3 className="font-bold text-gray-800 text-lg">{prod.titulo}</h3>
+                  <span className={`text-xs font-bold px-2 py-1 rounded uppercase tracking-wider ${prod.categoria === 'graos' ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'}`}>
                     {prod.categoria === "graos" ? "Grãos" : "Lavoura"}
-                  </p>
+                  </span>
                 </div>
               </div>
               <div className="flex gap-2">
                 <button
                   onClick={() => handleEdit(prod)}
-                  className="bg-blue-100 text-blue-600 p-2 rounded hover:bg-blue-200 cursor-pointer"
+                  className="bg-blue-100 text-blue-600 p-2 rounded hover:bg-blue-200 cursor-pointer transition"
+                  title="Editar"
                 >
                   <Pencil size={20} />
                 </button>
                 <button
                   onClick={() => handleDelete(prod.id)}
-                  className="bg-red-100 text-red-600 p-2 rounded hover:bg-red-200 cursor-pointer"
+                  className="bg-red-100 text-red-600 p-2 rounded hover:bg-red-200 cursor-pointer transition"
+                  title="Excluir"
                 >
                   <Trash2 size={20} />
                 </button>
