@@ -28,10 +28,10 @@ import {
   AlertTriangle,
   CheckCircle,
   X,
-  Lock // Adicionei ícone de cadeado para o login
+  Lock,
 } from "lucide-react";
 
-// ESTILOS PARA ESCONDER BARRA DE SCROLL 
+// ESTILOS PARA ESCONDER BARRA DE SCROLL
 const scrollHideStyle = `
   .scrollbar-hide::-webkit-scrollbar {
       display: none;
@@ -45,11 +45,12 @@ const scrollHideStyle = `
 }
 `;
 
+// Componente Principal
 export default function AdminPage() {
   const [user, setUser] = useState(null);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [errorMsg, setErrorMsg] = useState(""); // NOVO: Estado para erro de login
+  const [errorMsg, setErrorMsg] = useState("");
 
   // Modais
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -57,7 +58,7 @@ export default function AdminPage() {
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
 
-  // Configs
+  // Configurações de Contato
   const [configEmail, setConfigEmail] = useState("");
   const [configTelefone, setConfigTelefone] = useState("");
   const [configEndereco, setConfigEndereco] = useState("");
@@ -69,55 +70,59 @@ export default function AdminPage() {
   const [categoria, setCategoria] = useState("graos");
   const [imagem, setImagem] = useState(null);
   const [preview, setPreview] = useState(null);
-  
+
   const [loading, setLoading] = useState(false);
   const [produtos, setProdutos] = useState([]);
   const [editingId, setEditingId] = useState(null);
 
-  const CLOUD_NAME = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME; 
-  const UPLOAD_PRESET = process.env.NEXT_PUBLIC_CLOUDINARY_PRESET; 
+  const CLOUD_NAME = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+  const UPLOAD_PRESET = process.env.NEXT_PUBLIC_CLOUDINARY_PRESET;
 
-  // Função para pegar miniatura leve (Lista)
+  // Função para pegar miniatura leve
   const getThumbnail = (url) => {
-    if (!url || !url.includes('cloudinary.com')) return url;
-    return url.replace('/upload/', '/upload/w_150,h_150,c_fill,q_auto,f_auto/');
+    if (!url || !url.includes("cloudinary.com")) return url;
+    return url.replace("/upload/", "/upload/w_150,h_150,c_fill,q_auto,f_auto/");
   };
 
+  // Extrai o public_id da URL da imagem
   const getPublicIdFromUrl = (url) => {
     try {
-      const parts = url.split('/upload/');
+      const parts = url.split("/upload/");
       if (parts.length < 2) return null;
       const afterUpload = parts[1];
-      const versionParts = afterUpload.split('/'); 
-      if (versionParts[0].startsWith('v')) versionParts.shift();
-      const idWithExtension = versionParts.join('/');
-      return idWithExtension.split('.')[0];
+      const versionParts = afterUpload.split("/");
+      if (versionParts[0].startsWith("v")) versionParts.shift();
+      const idWithExtension = versionParts.join("/");
+      return idWithExtension.split(".")[0];
     } catch (e) {
       console.error("Erro ID", e);
       return null;
     }
   };
 
+  // Função para abrir modal de sucesso
   const openSuccessModal = (msg) => {
     setSuccessMessage(msg);
     setShowSuccessModal(true);
     setTimeout(() => setShowSuccessModal(false), 3000);
   };
 
+  // Função para confirmar exclusão
   const confirmDelete = (item) => {
     setItemToDelete(item);
     setShowDeleteModal(true);
   };
 
+  // Função para executar exclusão
   const executeDelete = async () => {
     if (itemToDelete) {
       try {
         if (itemToDelete.imagemUrl) {
           const publicId = getPublicIdFromUrl(itemToDelete.imagemUrl);
           if (publicId) {
-            await fetch('/delete_img.php', {
-              method: 'POST',
-              body: JSON.stringify({ public_id: publicId })
+            await fetch("/delete_img.php", {
+              method: "POST",
+              body: JSON.stringify({ public_id: publicId }),
             });
           }
         }
@@ -132,6 +137,7 @@ export default function AdminPage() {
     }
   };
 
+  // Função para buscar configurações de contato
   const fetchConfig = async () => {
     try {
       const docRef = doc(db, "configuracoes", "contato");
@@ -142,12 +148,17 @@ export default function AdminPage() {
         setConfigTelefone(data.telefone || "");
         setConfigEndereco(data.endereco || "");
       }
-    } catch (error) { console.error(error); }
+    } catch (error) {
+      console.error(error);
+    }
   };
 
+  // Função para buscar produtos
   const fetchProdutos = async () => {
     const querySnapshot = await getDocs(collection(db, "produtos"));
-    setProdutos(querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
+    setProdutos(
+      querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }))
+    );
   };
 
   useEffect(() => {
@@ -155,12 +166,13 @@ export default function AdminPage() {
       setUser(currentUser);
       if (currentUser) {
         fetchProdutos();
-        fetchConfig(); 
+        fetchConfig();
       }
     });
     return () => unsubscribe();
   }, []);
-  
+
+  // SALVAR CONFIGURAÇÕES DE CONTATO
   const handleSaveConfig = async (e) => {
     e.preventDefault();
     setLoadingConfig(true);
@@ -171,11 +183,13 @@ export default function AdminPage() {
         endereco: configEndereco,
       });
       openSuccessModal("Dados de contato atualizados!");
-    } catch (error) { alert("Erro: " + error.message); }
+    } catch (error) {
+      alert("Erro: " + error.message);
+    }
     setLoadingConfig(false);
   };
 
-  // --- LOGIN PERSONALIZADO ---
+  // LOGIN
   const handleLogin = async (e) => {
     e.preventDefault();
     setErrorMsg(""); // Limpa erros anteriores
@@ -184,14 +198,14 @@ export default function AdminPage() {
     } catch (error) {
       // Traduz erros do Firebase para Português
       console.log(error.code);
-      switch(error.code) {
-        case 'auth/invalid-credential':
-        case 'auth/wrong-password':
-        case 'auth/user-not-found':
-        case 'auth/invalid-email':
+      switch (error.code) {
+        case "auth/invalid-credential":
+        case "auth/wrong-password":
+        case "auth/user-not-found":
+        case "auth/invalid-email":
           setErrorMsg("E-mail ou senha incorretos.");
           break;
-        case 'auth/too-many-requests':
+        case "auth/too-many-requests":
           setErrorMsg("Muitas tentativas falhas. Tente novamente mais tarde.");
           break;
         default:
@@ -200,6 +214,7 @@ export default function AdminPage() {
     }
   };
 
+  // MANIPULAÇÃO DE IMAGEM
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -208,6 +223,7 @@ export default function AdminPage() {
     }
   };
 
+  // EDIÇÃO DE PRODUTO
   const handleEdit = (produto) => {
     setTitulo(produto.titulo);
     setDescricao(produto.descricao);
@@ -218,10 +234,17 @@ export default function AdminPage() {
     window.scrollTo({ top: 500, behavior: "smooth" });
   };
 
+  // CANCELAR EDIÇÃO
   const handleCancelEdit = () => {
-    setTitulo(""); setDescricao(""); setCategoria("graos"); setImagem(null); setPreview(null); setEditingId(null);
+    setTitulo("");
+    setDescricao("");
+    setCategoria("graos");
+    setImagem(null);
+    setPreview(null);
+    setEditingId(null);
   };
 
+  // SALVAR PRODUTO (NOVO OU EDITADO)
   const handleSave = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -231,41 +254,63 @@ export default function AdminPage() {
         const formData = new FormData();
         formData.append("file", imagem);
         formData.append("upload_preset", UPLOAD_PRESET);
-        const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, { method: "POST", body: formData });
+        const res = await fetch(
+          `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`,
+          { method: "POST", body: formData }
+        );
         const data = await res.json();
         urlFinal = data.secure_url;
       } else if (editingId) {
         const produtoAtual = produtos.find((p) => p.id === editingId);
         urlFinal = produtoAtual.imagemUrl;
       } else {
-        alert("Selecione uma imagem!"); setLoading(false); return;
+        alert("Selecione uma imagem!");
+        setLoading(false);
+        return;
       }
-      
-      const dadosProduto = { titulo, descricao, categoria, imagemUrl: urlFinal, updatedAt: new Date() };
+
+      const dadosProduto = {
+        titulo,
+        descricao,
+        categoria,
+        imagemUrl: urlFinal,
+        updatedAt: new Date(),
+      };
 
       if (editingId) {
         await updateDoc(doc(db, "produtos", editingId), dadosProduto);
         openSuccessModal("Produto atualizado com sucesso!");
       } else {
-        await addDoc(collection(db, "produtos"), { ...dadosProduto, createdAt: new Date() });
+        await addDoc(collection(db, "produtos"), {
+          ...dadosProduto,
+          createdAt: new Date(),
+        });
         openSuccessModal("Produto cadastrado com sucesso!");
       }
-      handleCancelEdit(); fetchProdutos();
-    } catch (error) { console.error(error); alert("Erro ao salvar."); }
+      handleCancelEdit();
+      fetchProdutos();
+    } catch (error) {
+      console.error(error);
+      alert("Erro ao salvar.");
+    }
     setLoading(false);
   };
 
-  // --- TELA DE LOGIN (NOVO VISUAL COM AVISO DE ERRO) ---
+  //  TELA DE LOGIN SE NÃO ESTIVER LOGADO
   if (!user) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
-        <form onSubmit={handleLogin} className="bg-white p-8 rounded-xl shadow-lg w-full max-w-md border-t-4 border-green-600">
-          
+        <form
+          onSubmit={handleLogin}
+          className="bg-white p-8 rounded-xl shadow-lg w-full max-w-md border-t-4 border-green-600"
+        >
           <div className="text-center mb-8">
             <div className="inline-block p-3 rounded-full bg-green-100 mb-2">
               <Lock className="w-8 h-8 text-green-700" />
             </div>
-            <h2 className="text-2xl font-bold text-green-800">Admin AgroSoja</h2>
+            <h2 className="text-2xl font-bold text-green-800">
+              Admin AgroSoja
+            </h2>
             <p className="text-gray-500 text-sm">Área restrita para gestão</p>
           </div>
 
@@ -278,21 +323,25 @@ export default function AdminPage() {
           )}
 
           <div className="mb-4">
-            <label className="block text-sm font-bold text-gray-700 mb-1">Email</label>
-            <input 
-              type="email" 
-              placeholder="Email de acesso" 
-              className="w-full border p-3 rounded-lg placeholder-gray-400 text-black focus:ring-2 focus:ring-green-500 outline-none transition" 
-              onChange={(e) => setEmail(e.target.value)} 
+            <label className="block text-sm font-bold text-gray-700 mb-1">
+              Email
+            </label>
+            <input
+              type="email"
+              placeholder="Email de acesso"
+              className="w-full border p-3 rounded-lg placeholder-gray-400 text-black focus:ring-2 focus:ring-green-500 outline-none transition"
+              onChange={(e) => setEmail(e.target.value)}
             />
           </div>
           <div className="mb-8">
-            <label className="block text-sm font-bold text-gray-700 mb-1">Senha</label>
-            <input 
-              type="password" 
-              placeholder="Senha de acesso" 
-              className="w-full border p-3 rounded-lg placeholder-gray-400 text-black focus:ring-2 focus:ring-green-500 outline-none transition" 
-              onChange={(e) => setPassword(e.target.value)} 
+            <label className="block text-sm font-bold text-gray-700 mb-1">
+              Senha
+            </label>
+            <input
+              type="password"
+              placeholder="Senha de acesso"
+              className="w-full border p-3 rounded-lg placeholder-gray-400 text-black focus:ring-2 focus:ring-green-500 outline-none transition"
+              onChange={(e) => setPassword(e.target.value)}
             />
           </div>
           <button className="w-full bg-green-700 text-white p-3 rounded-lg hover:bg-green-800 font-bold transition duration-200 shadow-md cursor-pointer">
@@ -309,149 +358,288 @@ export default function AdminPage() {
       <style>{scrollHideStyle}</style>
       <div className="max-w-4xl mx-auto">
         <div className="flex justify-between items-center mb-8 mt-4">
-          <h1 className="text-3xl font-bold text-green-800">Painel Administrativo</h1>
-          <button onClick={() => signOut(auth)} className="flex items-center gap-2 text-red-600 font-bold cursor-pointer hover:bg-red-50 p-2 rounded transition"><LogOut size={18} /> Sair</button>
+          <h1 className="text-3xl font-bold text-green-800">
+            Painel Administrativo
+          </h1>
+          <button
+            onClick={() => signOut(auth)}
+            className="flex items-center gap-2 text-red-600 font-bold cursor-pointer hover:bg-red-50 p-2 rounded transition"
+          >
+            <LogOut size={18} /> Sair
+          </button>
         </div>
 
         {/* DADOS DE CONTATO */}
         <div className="bg-white p-6 rounded-lg shadow-md mb-10 border-l-4 border-yellow-500">
-          <h2 className="text-xl font-bold mb-6 flex items-center gap-2 text-gray-800 border-b pb-2"><Settings size={20} /> Dados de Contato do Site</h2>
+          <h2 className="text-xl font-bold mb-6 flex items-center gap-2 text-gray-800 border-b pb-2">
+            <Settings size={20} /> Dados de Contato do Site
+          </h2>
           <form onSubmit={handleSaveConfig} className="grid gap-4">
             <div className="grid md:grid-cols-2 gap-6">
               <div>
-                <label className="text-sm font-bold text-gray-700 mb-1 block">Telefone / WhatsApp</label>
-                <input 
-                  type="text" 
-                  value={configTelefone} 
-                  onChange={(e) => setConfigTelefone(e.target.value)} 
-                  placeholder="(00) 00000-0000"
-                  className="border p-2 rounded w-full text-black placeholder-gray-400" 
+                <label className="text-sm font-bold text-gray-700 mb-1 block">
+                  Telefone / WhatsApp
+                </label>
+                <input
+                  type="text"
+                  value={configTelefone}
+                  onChange={(e) => setConfigTelefone(e.target.value)}
+                  placeholder="Ex: (00) 00000-0000"
+                  className="w-full border-gray-200 border bg-gray-100 p-3 rounded-lg focus:ring-2 focus:ring-yellow-500 outline-none transition"
                 />
               </div>
               <div>
-                <label className="text-sm font-bold text-gray-700 mb-1 block">Email de Contato</label>
-                <input 
-                  type="email" 
-                  value={configEmail} 
-                  onChange={(e) => setConfigEmail(e.target.value)} 
-                  placeholder="contato@empresa.com"
-                  className="border p-2 rounded w-full text-black placeholder-gray-400" 
+                <label className="text-sm font-bold text-gray-700 mb-1 block">
+                  Email de Contato
+                </label>
+                <input
+                  type="email"
+                  value={configEmail}
+                  onChange={(e) => setConfigEmail(e.target.value)}
+                  placeholder="Ex: contato@empresa.com"
+                  className="w-full border-gray-200 border bg-gray-100 p-3 rounded-lg focus:ring-2 focus:ring-yellow-500 outline-none transition"
                 />
               </div>
             </div>
             <div>
-              <label className="text-sm font-bold text-gray-700 mb-1 block">Endereço Completo</label>
-              <input 
-                type="text" 
-                value={configEndereco} 
-                onChange={(e) => setConfigEndereco(e.target.value)} 
-                placeholder="Rodovia X, KM Y - Cidade/UF"
-                className="border p-2 rounded w-full text-black placeholder-gray-400" 
+              <label className="text-sm font-bold text-gray-700 mb-1 block">
+                Endereço Completo
+              </label>
+              <input
+                type="text"
+                value={configEndereco}
+                onChange={(e) => setConfigEndereco(e.target.value)}
+                placeholder="Ex: Rodovia X, KM Y - Cidade/UF"
+                className="w-full border-gray-200 border bg-gray-100 p-3 rounded-lg focus:ring-2 focus:ring-yellow-500 outline-none transition"
               />
             </div>
-            <button disabled={loadingConfig} className="bg-yellow-500 text-white p-2 rounded font-bold hover:bg-yellow-600 w-full md:w-auto cursor-pointer transition mt-2">{loadingConfig ? "Salvando..." : "Atualizar Dados de Contato"}</button>
+            <button
+              disabled={loadingConfig}
+              className="bg-yellow-500 text-white p-2 rounded font-bold hover:bg-yellow-600 w-full md:w-auto cursor-pointer transition mt-2"
+            >
+              {loadingConfig ? "Salvando..." : "Atualizar Dados de Contato"}
+            </button>
           </form>
         </div>
 
         {/* FORMULÁRIO DE PRODUTOS */}
-        <div className={`p-6 rounded-lg shadow-md mb-10 transition-colors border-l-4 border-green-600 ${editingId ? "bg-blue-50 border-2 border-blue-200" : "bg-white"}`}>
+        <div
+          className={`p-6 rounded-lg shadow-md mb-10 transition-colors border-l-4 border-green-600 ${
+            editingId ? "bg-blue-50 border-2 border-blue-200" : "bg-white"
+          }`}
+        >
           <div className="flex justify-between items-center mb-6 border-b pb-2">
-            <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">{editingId ? <><Pencil size={20}/> Editar Produto</> : <><Upload size={20}/> Novo Produto</>}</h2>
-            {editingId && <button onClick={handleCancelEdit} className="text-sm text-gray-500 flex items-center gap-1 hover:text-red-500 cursor-pointer"><XCircle size={16} /> Cancelar Edição</button>}
+            <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+              {editingId ? (
+                <>
+                  <Pencil size={20} /> Editar Produto
+                </>
+              ) : (
+                <>
+                  <Upload size={20} /> Novo Produto
+                </>
+              )}
+            </h2>
+            {editingId && (
+              <button
+                onClick={handleCancelEdit}
+                className="text-sm text-gray-500 flex items-center gap-1 hover:text-red-500 cursor-pointer"
+              >
+                <XCircle size={16} /> Cancelar Edição
+              </button>
+            )}
           </div>
           <form onSubmit={handleSave} className="grid gap-4">
             <div>
-              <label className="text-sm font-bold text-gray-700 mb-1 block">Título do Produto</label>
-              <input 
-                type="text" 
-                value={titulo} 
-                onChange={(e) => setTitulo(e.target.value)} 
+              <label className="text-sm font-bold text-gray-700 mb-1 block">
+                Título do Produto
+              </label>
+              <input
+                type="text"
+                value={titulo}
+                onChange={(e) => setTitulo(e.target.value)}
                 placeholder="Ex: Soja Safra 2024"
-                className="border p-2 rounded w-full text-black placeholder-gray-400 focus:ring-2 focus:ring-green-500 outline-none" 
-                required 
+                className="w-full border-gray-200 border bg-gray-100 p-3 rounded-lg focus:ring-2 focus:ring-green-600 outline-none transition"
+                required
               />
             </div>
             <div>
-              <label className="text-sm font-bold text-gray-700 mb-1 block">Descrição Detalhada</label>
-              <textarea 
-                value={descricao} 
-                onChange={(e) => setDescricao(e.target.value)} 
+              <label className="text-sm font-bold text-gray-700 mb-1 block">
+                Descrição Detalhada
+              </label>
+              <textarea
+                value={descricao}
+                onChange={(e) => setDescricao(e.target.value)}
                 placeholder="Descreva as qualidades da soja..."
-                className="border p-2 rounded w-full text-black h-24 placeholder-gray-400 focus:ring-2 focus:ring-green-500 outline-none" 
-                required 
+                className="w-full border-gray-200 border bg-gray-100 p-3 rounded-lg focus:ring-2 focus:ring-green-600 outline-none transition"
+                required
               />
             </div>
             <div className="flex gap-4 flex-col md:flex-row items-start">
               <div className="w-full md:w-1/3">
-                <label className="text-sm font-bold text-gray-700 mb-1 block">Categoria</label>
-                <select value={categoria} onChange={(e) => setCategoria(e.target.value)} className="border p-2 rounded text-black bg-white w-full focus:ring-2 focus:ring-green-500 outline-none">
+                <label className="text-sm font-bold text-gray-700 mb-1 block">
+                  Categoria
+                </label>
+                <select
+                  value={categoria}
+                  onChange={(e) => setCategoria(e.target.value)}
+                  className="border border-gray-500 p-4 rounded-lg bg-gray-50 w-full focus:ring-2 focus:ring-green-500 outline-none transition"
+                >
                   <option value="graos">Soja em Grãos</option>
                   <option value="plantada">Soja Plantada</option>
                 </select>
               </div>
               <div className="flex-1 w-full">
-                <label className="text-sm font-bold text-gray-700 mb-1 block">Foto do Produto</label>
+                <label className="text-sm font-bold text-gray-700 mb-1 block">
+                  Foto do Produto
+                </label>
                 <div className="flex gap-4 items-center">
                   <div className="flex-1">
-                    <input type="file" onChange={handleFileChange} className="border p-2 rounded w-full text-black bg-white cursor-pointer file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100" accept="image/*" />
+                    <input
+                      type="file"
+                      onChange={handleFileChange}
+                      className="border border-gray-500 p-2 rounded-lg w-full bg-gray-50 cursor-pointer file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 file:cursor-pointer hover:file:bg-green-100"
+                      accept="image/*"
+                    />
                   </div>
                   {preview && (
                     <div className="relative w-16 h-16 rounded-lg overflow-hidden border-2 border-green-500 shadow-sm">
-                      <img src={preview} alt="Preview" className="w-full h-full object-cover" />
+                      <img
+                        src={preview}
+                        alt="Preview"
+                        className="w-full h-full object-cover"
+                      />
                     </div>
                   )}
                 </div>
               </div>
             </div>
-            <button disabled={loading} className={`text-white p-3 rounded flex items-center justify-center gap-2 transition disabled:opacity-50 cursor-pointer mt-4 font-bold ${editingId ? "bg-blue-600 hover:bg-blue-700" : "bg-green-600 hover:bg-green-700"}`}>{loading ? "Processando..." : editingId ? "Salvar Alterações" : "Cadastrar Produto"}</button>
+            <button
+              disabled={loading}
+              className={`text-white p-3 rounded flex items-center justify-center gap-2 transition disabled:opacity-50 cursor-pointer mt-4 font-bold ${
+                editingId
+                  ? "bg-blue-600 hover:bg-blue-700"
+                  : "bg-green-600 hover:bg-green-700"
+              }`}
+            >
+              {loading
+                ? "Processando..."
+                : editingId
+                ? "Salvar Alterações"
+                : "Cadastrar Produto"}
+            </button>
           </form>
         </div>
 
         {/* LISTA DE PRODUTOS */}
         <div className="grid gap-5">
-          <h3 className="text-xl font-bold text-gray-600 mb-2 pl-1 border-l-4 border-gray-500">Produtos Cadastrados ({produtos.length})</h3>
-          {produtos.length === 0 && <p className="text-gray-400 italic">Nenhum produto cadastrado.</p>}
+          <h3 className="text-xl font-bold text-gray-600 mb-2 pl-1 border-l-4 border-gray-500">
+            Produtos Cadastrados ({produtos.length})
+          </h3>
+          {produtos.length === 0 && (
+            <p className="text-gray-400 italic">Nenhum produto cadastrado.</p>
+          )}
           {produtos.map((prod) => (
-            <div key={prod.id} className="bg-white p-4 rounded shadow flex items-center justify-between border-l-4 border-gray-500 hover:bg-gray-200 transition">
+            <div
+              key={prod.id}
+              className="bg-white p-4 rounded shadow flex items-center justify-between border-l-4 border-gray-500 hover:bg-gray-200 transition"
+            >
               <div className="flex items-center gap-4">
                 <div className="w-20 h-20 rounded overflow-hidden bg-gray-200 border border-gray-300 flex-shrink-0">
-                  <img src={getThumbnail(prod.imagemUrl)} alt={prod.titulo} loading="lazy" className="w-full h-full object-cover" />
+                  <img
+                    src={getThumbnail(prod.imagemUrl)}
+                    alt={prod.titulo}
+                    loading="lazy"
+                    className="w-full h-full object-cover"
+                  />
                 </div>
-                <div><h3 className="font-bold text-gray-800 text-lg">{prod.titulo}</h3><span className={`text-xs font-bold px-2 py-1 rounded uppercase tracking-wider ${prod.categoria === 'graos' ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'}`}>{prod.categoria === "graos" ? "Grãos" : "Lavoura"}</span></div>
+                <div>
+                  <h3 className="font-bold text-gray-800 text-lg">
+                    {prod.titulo}
+                  </h3>
+                  <span
+                    className={`text-xs font-bold px-2 py-1 rounded uppercase tracking-wider ${
+                      prod.categoria === "graos"
+                        ? "bg-yellow-100 text-yellow-800"
+                        : "bg-green-100 text-green-800"
+                    }`}
+                  >
+                    {prod.categoria === "graos" ? "Grãos" : "Lavoura"}
+                  </span>
+                </div>
               </div>
               <div className="flex gap-2">
-                <button onClick={() => handleEdit(prod)} className="bg-blue-100 text-blue-600 p-2 rounded hover:bg-blue-200 cursor-pointer transition" title="Editar"><Pencil size={20} /></button>
-                <button onClick={() => confirmDelete(prod)} className="bg-red-100 text-red-600 p-2 rounded hover:bg-red-200 cursor-pointer transition" title="Excluir"><Trash2 size={20} /></button>
+                <button
+                  onClick={() => handleEdit(prod)}
+                  className="bg-blue-100 text-blue-600 p-2 rounded hover:bg-blue-200 cursor-pointer transition"
+                  title="Editar"
+                >
+                  <Pencil size={20} />
+                </button>
+                <button
+                  onClick={() => confirmDelete(prod)}
+                  className="bg-red-100 text-red-600 p-2 rounded hover:bg-red-200 cursor-pointer transition"
+                  title="Excluir"
+                >
+                  <Trash2 size={20} />
+                </button>
               </div>
             </div>
           ))}
         </div>
       </div>
 
-      {/* --- MODAL DE CONFIRMAÇÃO DE EXCLUSÃO --- */}
+      {/* MODAL DE CONFIRMAÇÃO DE EXCLUSÃO  */}
       {showDeleteModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fadeIn">
           <div className="bg-white rounded-lg shadow-2xl w-full max-w-sm overflow-hidden animate-scaleIn">
             <div className="p-6 text-center">
-              <div className="mx-auto w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-4"><AlertTriangle className="w-8 h-8 text-red-600" /></div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2">Excluir Produto?</h3>
-              <p className="text-gray-500 text-sm">Tem certeza que deseja remover este item? Essa ação não pode ser desfeita.</p>
+              <div className="mx-auto w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-4">
+                <AlertTriangle className="w-8 h-8 text-red-600" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">
+                Excluir Produto?
+              </h3>
+              <p className="text-gray-500 text-sm">
+                Tem certeza que deseja remover este item? Essa ação não pode ser
+                desfeita.
+              </p>
             </div>
             <div className="flex border-t border-gray-100 bg-gray-50">
-              <button onClick={() => setShowDeleteModal(false)} className="flex-1 py-4 text-gray-600 font-bold hover:bg-gray-100 transition border-r border-gray-100">Cancelar</button>
-              <button onClick={executeDelete} className="flex-1 py-4 text-red-600 font-bold hover:bg-red-50 transition">Sim, Excluir</button>
+              <button
+                onClick={() => setShowDeleteModal(false)}
+                className="flex-1 py-4 text-gray-600 font-bold hover:bg-gray-100 transition border-r border-gray-100"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={executeDelete}
+                className="flex-1 py-4 text-red-600 font-bold hover:bg-red-50 transition"
+              >
+                Sim, Excluir
+              </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* --- MODAL DE SUCESSO --- */}
+      {/* MODAL DE SUCESSO */}
       {showSuccessModal && (
         <div className="fixed inset-0 z-50 flex items-start justify-center sm:items-start sm:justify-end p-6 pointer-events-none">
           <div className="mt-4 sm:mt-0 bg-white rounded-lg shadow-2xl border-l-4 border-green-500 p-4 flex items-center gap-4 animate-slideIn pointer-events-auto max-w-sm w-full">
-            <div className="bg-green-100 p-2 rounded-full"><CheckCircle className="w-6 h-6 text-green-600" /></div>
-            <div className="flex-1"><h4 className="font-bold text-gray-800">Sucesso!</h4><p className="text-sm text-gray-600">{successMessage}</p></div>
-            <button onClick={() => setShowSuccessModal(false)} className="text-gray-400 hover:text-gray-600"><X size={18} /></button>
+            <div className="bg-green-100 p-2 rounded-full">
+              <CheckCircle className="w-6 h-6 text-green-600" />
+            </div>
+            <div className="flex-1">
+              <h4 className="font-bold text-gray-800">Sucesso!</h4>
+              <p className="text-sm text-gray-600">{successMessage}</p>
+            </div>
+            <button
+              onClick={() => setShowSuccessModal(false)}
+              className="text-gray-400 hover:text-gray-600 cursor-pointer"
+            >
+              <X size={18} />
+            </button>
           </div>
         </div>
       )}
