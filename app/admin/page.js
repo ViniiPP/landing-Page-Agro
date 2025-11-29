@@ -221,7 +221,7 @@ export default function AdminPage() {
   return (
     <div className="min-h-screen bg-gray-50 p-8">
       <div className="max-w-4xl mx-auto">
-        <div className="flex justify-between items-center mb-8">
+        <div className="flex justify-between items-center mb-8 mt-4">
           <h1 className="text-3xl font-bold text-green-800">
             Painel Administrativo
           </h1>
@@ -241,7 +241,7 @@ export default function AdminPage() {
           <form onSubmit={handleSaveConfig} className="grid gap-4">
             <div className="grid md:grid-cols-2 gap-4">
               <div>
-                <label className="text-sm font-bold text-gray-600">
+                <label className="text-sm font-bold text-black">
                   Telefone / WhatsApp (ex: (00) 00000-0000)
                 </label>
                 <input
@@ -249,11 +249,11 @@ export default function AdminPage() {
                   placeholder="(00) 00000-0000"
                   value={configTelefone}
                   onChange={(e) => setConfigTelefone(e.target.value)}
-                  className="border p-2 rounded w-full placeholder-black text-gray-600"
+                  className="border p-2 rounded w-full placeholder-gray-600 text-black"
                 />
               </div>
               <div>
-                <label className="text-sm font-bold text-gray-600">
+                <label className="text-sm font-bold text-black">
                   Email de Contato
                 </label>
                 <input
@@ -261,12 +261,12 @@ export default function AdminPage() {
                   placeholder="contato@empresa.com"
                   value={configEmail}
                   onChange={(e) => setConfigEmail(e.target.value)}
-                  className="border p-2 rounded w-full placeholder-black text-gray-600"
+                  className="border p-2 rounded w-full placeholder-gray-600 text-black"
                 />
               </div>
             </div>
             <div>
-              <label className="text-sm font-bold text-gray-600">
+              <label className="text-sm font-bold text-black">
                 Endereço Completo
               </label>
               <input
@@ -274,7 +274,7 @@ export default function AdminPage() {
                 placeholder="Rodovia X, KM Y - Cidade/UF"
                 value={configEndereco}
                 onChange={(e) => setConfigEndereco(e.target.value)}
-                className="border p-2 rounded w-full placeholder-black text-gray-600"
+                className="border p-2 rounded w-full placeholder-gray-600 text-black"
               />
             </div>
             <button
@@ -288,7 +288,7 @@ export default function AdminPage() {
 
         {/* FORMULÁRIO DE PRODUTOS */}
         <div
-          className={`p-6 rounded-lg shadow-md mb-10 transition-colors ${
+          className={`p-6 rounded-lg shadow-md mb-10 transition-colors border-l-4 border-green-600 ${
             editingId ? "bg-blue-50 border-2 border-blue-200" : "bg-white"
           }`}
         >

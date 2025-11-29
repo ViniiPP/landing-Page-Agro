@@ -10,18 +10,25 @@ function FadeIn({ children, delay = 0, className = "" }) {
 
   useEffect(() => {
     const observer = new IntersectionObserver(entries => {
-      entries.forEach(entry => setIsVisible(entry.isIntersecting));
-    });
-    const { current } = domRef;
+      if (entries[0].isIntersecting) {
+        setIsVisible(true);
+        observer.unobserve(domRef.current);
+      }
+    }, { threshold: 0.1 }); 
+
+    const current = domRef.current;
     if (current) observer.observe(current);
-    return () => observer.unobserve(current);
+    
+    return () => {
+      if (current) observer.unobserve(current);
+    };
   }, []);
 
   return (
     <div
       ref={domRef}
-      className={`transition-all duration-1000 ease-out transform ${
-        isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-20'
+      className={`transition-all duration-700 ease-out transform ${
+        isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
       } ${className}`}
       style={{ transitionDelay: `${delay}ms` }}
     >
@@ -37,19 +44,20 @@ export default function LandingPage() {
   
   // PAGINAÇÃO RESPONSIVA
   const [paginaAtual, setPaginaAtual] = useState(0);
-  const [itensPorPagina, setItensPorPagina] = useState(6); // Começa com 6 (Desktop)
+  const [itensPorPagina, setItensPorPagina] = useState(6);
   
   // ESTADOS DO FORMULÁRIO
   const [formNome, setFormNome] = useState('');
   const [formAssunto, setFormAssunto] = useState('');
 
+  // ESTADOS DO CONTATO
   const [contato, setContato] = useState({
     telefone: '(00) 00000-0000',
     email: 'contato@agrosoja.com',
     endereco: 'Endereço não cadastrado'
   });
 
-  // DETECTAR TAMANHO DA TELA PARA AJUSTAR QUANTIDADE DE ITENS
+  // AJUSTA ITENS POR PÁGINA CONFORME LARGURA DA TELA
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth < 768) {
@@ -83,6 +91,7 @@ export default function LandingPage() {
     setPaginaAtual(0);
   };
 
+  // LÓGICA DE FILTRO
   const produtosFiltrados = filtro === 'todos' ? produtos : produtos.filter(p => p.categoria === filtro);
   
   // LÓGICA DE CORTE DOS PRODUTOS
@@ -95,10 +104,13 @@ export default function LandingPage() {
 
   // Se redimensionar e a página atual não existir mais, volta pra 0
   useEffect(() => {
-    if (paginaAtual >= totalPaginas && totalPaginas > 0) {
-      setPaginaAtual(0);
+    if (totalPaginas > 0 && paginaAtual >= totalPaginas) {
+      const timer = setTimeout(() => {
+        setPaginaAtual(0);
+      }, 0);
+      return () => clearTimeout(timer);
     }
-  }, [itensPorPagina, totalPaginas]);
+  }, [paginaAtual, totalPaginas]);
 
   const cleanPhone = contato.telefone.replace(/\D/g, '');
   const whatsAppLinkPadrao = `https://wa.me/55${cleanPhone}`;
@@ -110,6 +122,13 @@ export default function LandingPage() {
     }
     const encodedMessage = encodeURIComponent(mensagem);
     window.open(`https://wa.me/55${cleanPhone}?text=${encodedMessage}`, '_blank');
+  };
+
+  // Função para pedir imagem leve ao Cloudinary
+  const otimizarImagem = (url) => {
+    if (!url || !url.includes('cloudinary.com')) return url;
+    // Insere transformações: f_auto (melhor formato), q_auto (qualidade equilibrada), w_600 (largura max 600px)
+    return url.replace('/upload/', '/upload/f_auto,q_auto,w_600/');
   };
 
   return (
@@ -196,7 +215,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* --- SEÇÃO DE PRODUTOS (UNIFICADA) --- */}
+      {/* SEÇÃO DE PRODUTOS  */}
       <section id="producao" className="py-24 bg-gray-50">
         <div className="container mx-auto px-6">
           <FadeIn>
@@ -221,15 +240,10 @@ export default function LandingPage() {
             </div>
           </FadeIn>
 
-          {/* padding lateral para caber as setas (px-12 mobile, px-20 desktop) */}
+          {/* Botão Anterior */}
           <div className="relative px-12 md:px-20 min-h-[400px]">
-            
-            {/* Botão Anterior */}
             {paginaAtual > 0 && (
-              <button 
-                onClick={() => setPaginaAtual(prev => prev - 1)}
-                className="absolute left-0 top-1/2 -translate-y-1/2 bg-white p-2 md:p-3 rounded-full shadow-lg text-green-800 hover:bg-green-50 hover:scale-110 transition z-10 cursor-pointer border border-gray-100"
-              >
+              <button onClick={() => setPaginaAtual(prev => prev - 1)} className="absolute left-0 top-1/2 -translate-y-1/2 bg-white p-2 md:p-3 rounded-full shadow-lg text-green-800 hover:bg-green-50 hover:scale-110 transition z-10 cursor-pointer border border-gray-100">
                 <ChevronLeft size={24} className="md:w-8 md:h-8" />
               </button>
             )}
@@ -243,11 +257,14 @@ export default function LandingPage() {
               
               {produtosVisiveis.map((item, index) => (
                 <FadeIn key={item.id} delay={index * 50} className="h-full">
-                  <div className="bg-white rounded-2xl shadow-sm overflow-hidden hover:shadow-2xl transition-all duration-500 group border border-gray-100 hover:-translate-y-2 h-full flex flex-col">
+                  <div className="bg-white rounded-2xl shadow-sm overflow-hidden hover:shadow-xl transition-all duration-300 group border border-gray-100 hover:-translate-y-1 h-full flex flex-col">
                     <div className="h-64 overflow-hidden cursor-pointer relative shrink-0" onClick={() => setProdutoSelecionado(item)}>
-                      <img src={item.imagemUrl} alt={item.titulo} className="w-full h-full object-cover group-hover:scale-110 transition duration-700" />
-                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition duration-300 flex items-center justify-center backdrop-blur-[2px]">
-                        <span className="text-white bg-white/20 border border-white/50 px-6 py-2 rounded-full text-sm font-bold backdrop-blur-md hover:bg-white hover:text-black transition">Ver Detalhes</span>
+                      {/* OTIMIZAÇÃO: Usando a função otimizarImagem na URL */}
+                      <img src={otimizarImagem(item.imagemUrl)} alt={item.titulo} loading="lazy" className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
+                      
+                      {/* OTIMIZAÇÃO: Removido backdrop-blur, usando apenas bg-black/40 */}
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition duration-300 flex items-center justify-center">
+                        <span className="text-white bg-white/20 border border-white/50 px-6 py-2 rounded-full text-sm font-bold hover:bg-white hover:text-black transition">Ver Detalhes</span>
                       </div>
                     </div>
                     <div className="p-8 flex flex-col flex-1">
@@ -265,10 +282,7 @@ export default function LandingPage() {
 
             {/* Botão Próximo */}
             {(paginaAtual + 1) < totalPaginas && (
-              <button 
-                onClick={() => setPaginaAtual(prev => prev + 1)}
-                className="absolute right-0 top-1/2 -translate-y-1/2 bg-white p-2 md:p-3 rounded-full shadow-lg text-green-800 hover:bg-green-50 hover:scale-110 transition z-10 cursor-pointer border border-gray-100"
-              >
+              <button onClick={() => setPaginaAtual(prev => prev + 1)} className="absolute right-0 top-1/2 -translate-y-1/2 bg-white p-2 md:p-3 rounded-full shadow-lg text-green-800 hover:bg-green-50 hover:scale-110 transition z-10 cursor-pointer border border-gray-100">
                 <ChevronRight size={24} className="md:w-8 md:h-8" />
               </button>
             )}
@@ -277,11 +291,7 @@ export default function LandingPage() {
             {totalPaginas > 1 && (
               <div className="flex justify-center gap-2 mt-12">
                 {[...Array(totalPaginas)].map((_, idx) => (
-                  <button 
-                    key={idx}
-                    onClick={() => setPaginaAtual(idx)}
-                    className={`w-3 h-3 rounded-full transition-all ${idx === paginaAtual ? 'bg-green-600 scale-125' : 'bg-gray-300 hover:bg-green-400'}`}
-                  />
+                  <button key={idx} onClick={() => setPaginaAtual(idx)} className={`w-3 h-3 rounded-full transition-all ${idx === paginaAtual ? 'bg-green-600 scale-125' : 'bg-gray-300 hover:bg-green-400'}`} />
                 ))}
               </div>
             )}
@@ -293,7 +303,6 @@ export default function LandingPage() {
       <section id="contato" className="py-24 bg-green-900 text-white relative overflow-hidden">
         <div className="absolute top-0 right-0 w-96 h-96 bg-green-800 rounded-full blur-3xl opacity-50 -translate-y-1/2 translate-x-1/2"></div>
         <div className="absolute bottom-0 left-0 w-64 h-64 bg-yellow-600 rounded-full blur-3xl opacity-20 translate-y-1/2 -translate-x-1/2"></div>
-
         <div className="container mx-auto px-6 relative z-10">
           <FadeIn>
             <div className="grid md:grid-cols-2 gap-16 items-center">
@@ -368,7 +377,7 @@ export default function LandingPage() {
               <X size={24} />
             </button>
             <div className="w-full md:w-1/2 h-48 md:h-auto bg-gray-100 relative shrink-0">
-              <img src={produtoSelecionado.imagemUrl} alt={produtoSelecionado.titulo} className="w-full h-full object-cover" />
+              <img src={otimizarImagem(produtoSelecionado.imagemUrl)} alt={produtoSelecionado.titulo} className="w-full h-full object-cover" />
             </div>
             <div className="w-full md:w-1/2 p-6 md:p-12 flex flex-col relative">
               <span className="text-xs font-bold text-green-600 uppercase tracking-widest mb-2 md:mb-3 flex items-center gap-2">
