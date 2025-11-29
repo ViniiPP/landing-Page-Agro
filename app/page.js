@@ -2,9 +2,9 @@
 import { useEffect, useState, useRef } from 'react';
 import { collection, getDocs, doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { Phone, Target, Eye, Sprout, Tractor, MessageCircle, X, ChevronLeft, ChevronRight, Hand, Menu } from 'lucide-react'; // Adicionei 'Menu'
+import { Phone, Target, Eye, Sprout, Tractor, MessageCircle, X, ChevronLeft, ChevronRight, Hand, Menu } from 'lucide-react';
 
-// --- ESTILOS PARA ESCONDER BARRA DE SCROLL ---
+// ESTILOS PARA ESCONDER BARRA DE SCROLL 
 const scrollHideStyle = `
   .scrollbar-hide::-webkit-scrollbar {
       display: none;
@@ -46,14 +46,14 @@ export default function LandingPage() {
   const [filtro, setFiltro] = useState('todos');
   const [produtoSelecionado, setProdutoSelecionado] = useState(null);
   
-  // ESTADO DO MENU MOBILE (NOVO)
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-
-  // PAGINAÇÃO DESKTOP
   const [paginaAtual, setPaginaAtual] = useState(0);
   const [itensPorPagina, setItensPorPagina] = useState(6);
   
-  // ESTADOS DO FORMULÁRIO
+  // ESTADO PARA O HOVER AUTOMÁTICO NO MOBILE
+  const [activeCardIndex, setActiveCardIndex] = useState(null);
+  const cardsRef = useRef([]);
+
   const [formNome, setFormNome] = useState('');
   const [formAssunto, setFormAssunto] = useState('');
 
@@ -63,14 +63,81 @@ export default function LandingPage() {
     endereco: 'Endereço não cadastrado'
   });
 
-  // DETECTAR TAMANHO DA TELA
+  // DADOS DE MISSÃO, VISÃO E VALORES / facilita no hover
+  const identityData = [
+    {
+      title: "Missão",
+      icon: Target,
+      text: "Produzir soja com sustentabilidade e alta tecnologia, garantindo segurança alimentar e gerando valor para a sociedade e parceiros.",
+      color: "green",
+      borderColor: "border-green-500",
+      bgLight: "bg-green-100",
+      bgDark: "bg-green-600",
+      textDark: "text-green-700",
+      textHover: "text-yellow-700"
+    },
+    {
+      title: "Visão",
+      icon: Eye,
+      text: "Ser referência nacional em produtividade e qualidade de grãos até 2030, expandindo fronteiras agrícolas com inovação.",
+      color: "yellow",
+      borderColor: "border-yellow-500",
+      bgLight: "bg-yellow-100",
+      bgDark: "bg-yellow-500",
+      textDark: "text-yellow-700",
+      textHover: "text-green-700"
+    },
+    {
+      title: "Valores",
+      icon: Sprout,
+      text: "Ética em cada negócio, Respeito à Terra e ao Meio Ambiente, Inovação Constante e Compromisso total com o Cliente.",
+      color: "green",
+      borderColor: "border-green-500",
+      bgLight: "bg-green-100",
+      bgDark: "bg-green-600",
+      textDark: "text-green-700",
+      textHover: "text-yellow-700"
+    }
+  ];
+
+  // EFEITO HOVER: DETECTAR QUAL CARD ESTÁ NO CENTRO (MOBILE)
+  useEffect(() => {
+    // Só roda se for mobile (< 768px)
+    if (window.innerWidth >= 768) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setActiveCardIndex(Number(entry.target.dataset.index));
+          }
+        });
+      },
+      {
+        root: null,
+        rootMargin: "-40% 0px -40% 0px", // Ajusta a área de interseção para o centro
+        threshold: 0.1,
+      }
+    );
+
+    cardsRef.current.forEach((card) => {
+      if (card) observer.observe(card);
+    });
+
+    return () => {
+      cardsRef.current.forEach((card) => {
+        if (card) observer.unobserve(card);
+      });
+    };
+  }, []);
+
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth < 768) {
         setItensPorPagina(1);
       } else {
         setItensPorPagina(6);
-        setIsMenuOpen(false); // Fecha o menu se a pessoa aumentar a tela
+        setIsMenuOpen(false);
       }
     };
     handleResize();
@@ -131,7 +198,6 @@ export default function LandingPage() {
     return url.replace('/upload/', '/upload/f_auto,q_auto,w_600/');
   };
 
-  // Links de navegação
   const navLinks = [
     { name: 'Início', id: 'home' },
     { name: 'Sobre', id: 'sobre' },
@@ -143,18 +209,13 @@ export default function LandingPage() {
     <main className="min-h-screen font-sans text-gray-800 bg-gray-50 selection:bg-green-200 selection:text-green-900">
       <style>{scrollHideStyle}</style>
 
-       {/* HEADER: Grid no PC (3 colunas), Flex no Mobile */}
+      {/* HEADER */}
       <header className="fixed w-full bg-white/95 backdrop-blur-md shadow-sm z-50 transition-all duration-300">
-        <div className="container mx-auto px-6 py-5">
-          
+        <div className="container mx-auto px-6 py-4">
           <div className="flex justify-between items-center md:grid md:grid-cols-3">
-            
-            {/* 1. LOGO (Esquerda) */}
             <h1 className="text-2xl font-bold text-green-800 flex items-center gap-2 hover:scale-105 transition-transform cursor-default z-50 justify-self-start">
               <Sprout className="text-green-600" /> AgroSoja
             </h1>
-            
-            {/* 2. MENU (Centro exato) */}
             <nav className="hidden md:flex gap-8 text-sm font-medium text-gray-600 justify-self-center">
               {navLinks.map((item) => (
                 <a key={item.name} href={`#${item.id}`} className="hover:text-green-600 hover:-translate-y-0.5 transition-all relative group">
@@ -163,13 +224,7 @@ export default function LandingPage() {
                 </a>
               ))}
             </nav>
-
-            {/* 3. LADO DIREITO (Vazio no PC, Menu Hambúrguer no Mobile) */}
             <div className="flex items-center justify-end md:justify-self-end">
-              
-              {/* Botão Fale Conosco removido daqui para o Desktop */}
-
-              {/* Botão Mobile (Hambúrguer) */}
               <button 
                 className="md:hidden text-green-800 z-50 p-2 rounded hover:bg-green-50"
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
@@ -178,8 +233,6 @@ export default function LandingPage() {
               </button>
             </div>
           </div>
-
-          {/* MENU MOBILE EXPANSÍVEL */}
           <div className={`md:hidden absolute top-full left-0 w-full bg-white shadow-lg transition-all duration-300 ease-in-out overflow-hidden ${isMenuOpen ? 'max-h-96 border-t border-gray-100' : 'max-h-0'}`}>
             <nav className="flex flex-col p-6 gap-4">
               {navLinks.map((item) => (
@@ -192,11 +245,7 @@ export default function LandingPage() {
                   {item.name}
                 </a>
               ))}
-              <a 
-                href={whatsAppLinkPadrao} 
-                target="_blank"
-                className="mt-2 text-center bg-green-600 text-white font-bold py-3 rounded-lg hover:bg-green-700 transition"
-              >
+              <a href={whatsAppLinkPadrao} target="_blank" className="mt-2 text-center bg-green-600 text-white font-bold py-3 rounded-lg hover:bg-green-700 transition">
                 Fale no WhatsApp
               </a>
             </nav>
@@ -204,12 +253,10 @@ export default function LandingPage() {
         </div>
       </header>
 
-      {/* HERO SECTION - Espaçamento Mobile Ajustado */}
+      {/* HERO SECTION */}
       <section id="home" className="relative h-screen flex items-center justify-center overflow-hidden">
         <div className="absolute inset-0 bg-black/40 z-10"></div>
         <div className="absolute inset-0 bg-cover bg-center animate-slow-zoom blur-xs" style={{ backgroundImage: "url('/imgs/soja.jpg')" }}></div>
-        
-        {/* AQUI ESTÁ A MUDANÇA: px-8 no mobile (antes era px-4) */}
         <div className="relative z-20 text-center text-white px-8 md:px-4 max-w-4xl">
           <FadeIn>
             <h2 className="text-5xl md:text-7xl font-bold mb-6 drop-shadow-lg tracking-tight">Excelência do<br/>Plantio à Colheita</h2>
@@ -226,7 +273,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* MISSÃO VISÃO VALORES - BLOCOS ESTRATÉGICOS */}
+      {/* MISSÃO / VISÃO / VALORES - COM HOVER AUTOMÁTICO MOBILE */}
       <section id="sobre" className="py-24 bg-gray-50">
         <div className="container mx-auto px-6">
           <FadeIn>
@@ -238,49 +285,59 @@ export default function LandingPage() {
           </FadeIn>
           
           <div className="grid md:grid-cols-3 gap-8">
-            <FadeIn delay={100}>
-              <div className="bg-white p-10 rounded-xl shadow-md hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 border-b-4 border-green-500 group h-full flex flex-col items-center text-center relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-green-50 rounded-bl-full -mr-8 -mt-8 transition-transform group-hover:scale-110"></div>
-                <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mb-6 relative z-10 group-hover:bg-green-600 transition-colors duration-300">
-                  <Target className="w-10 h-10 text-green-700 group-hover:text-white transition-colors duration-300" />
-                </div>
-                <h4 className="text-2xl font-bold text-gray-800 mb-4 relative z-10">Missão</h4>
-                <p className="text-gray-600 leading-relaxed relative z-10">
-                  Produzir soja com sustentabilidade e alta tecnologia, garantindo segurança alimentar e gerando valor para a sociedade e parceiros.
-                </p>
-              </div>
-            </FadeIn>
+            {identityData.map((item, index) => {
+              // Verifica se este card está ativo (no centro no mobile)
+              const isActive = activeCardIndex === index;
+              const Icon = item.icon;
 
-            <FadeIn delay={300}>
-              <div className="bg-white p-10 rounded-xl shadow-md hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 border-b-4 border-yellow-500 group h-full flex flex-col items-center text-center relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-yellow-50 rounded-bl-full -mr-8 -mt-8 transition-transform group-hover:scale-110"></div>
-                <div className="w-20 h-20 bg-yellow-100 rounded-full flex items-center justify-center mb-6 relative z-10 group-hover:bg-yellow-500 transition-colors duration-300">
-                  <Eye className="w-10 h-10 text-yellow-700 group-hover:text-white transition-colors duration-300" />
-                </div>
-                <h4 className="text-2xl font-bold text-gray-800 mb-4 relative z-10">Visão</h4>
-                <p className="text-gray-600 leading-relaxed relative z-10">
-                  Ser referência nacional em produtividade e qualidade de grãos até 2030, expandindo fronteiras agrícolas com inovação.
-                </p>
-              </div>
-            </FadeIn>
-
-            <FadeIn delay={500}>
-              <div className="bg-white p-10 rounded-xl shadow-md hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 border-b-4 border-green-500 group h-full flex flex-col items-center text-center relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-green-50 rounded-bl-full -mr-8 -mt-8 transition-transform group-hover:scale-110"></div>
-                <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mb-6 relative z-10 group-hover:bg-green-600 transition-colors duration-300">
-                  <Sprout className="w-10 h-10 text-green-700 group-hover:text-white transition-colors duration-300" />
-                </div>
-                <h4 className="text-2xl font-bold text-gray-800 mb-4 relative z-10">Valores</h4>
-                <p className="text-gray-600 leading-relaxed relative z-10">
-                  Ética em cada negócio, Respeito à Terra e ao Meio Ambiente, Inovação Constante e Compromisso total com o Cliente.
-                </p>
-              </div>
-            </FadeIn>
+              return (
+                <FadeIn key={index} delay={index * 200}>
+                  <div 
+                    ref={(el) => (cardsRef.current[index] = el)} // Salva a referência para o observador
+                    data-index={index}
+                    className={`
+                      bg-white p-10 rounded-xl shadow-md transition-all duration-500 border-b-4 group h-full flex flex-col items-center text-center relative overflow-hidden
+                      ${item.borderColor}
+                      hover:shadow-2xl hover:-translate-y-2
+                      ${isActive ? 'shadow-2xl -translate-y-2' : ''} 
+                    `}
+                  >
+                    {/* Círculo Decorativo Fundo */}
+                    <div className={`
+                      absolute top-0 right-0 w-32 h-32 rounded-bl-full -mr-8 -mt-8 transition-transform duration-500
+                      ${item.color === 'green' ? 'bg-green-50' : 'bg-yellow-50'}
+                      group-hover:scale-110
+                      ${isActive ? 'scale-110' : ''}
+                    `}></div>
+                    
+                    {/* Ícone */}
+                    <div className={`
+                      w-20 h-20 rounded-full flex items-center justify-center mb-6 relative z-10 transition-colors duration-500
+                      ${item.bgLight} 
+                      group-hover:${item.bgDark}
+                      ${isActive ? item.bgDark : ''}
+                    `}>
+                      <Icon className={`
+                        w-10 h-10 transition-colors duration-500
+                        ${item.textDark}
+                        group-hover:text-white
+                        ${isActive ? 'text-white' : ''}
+                      `} />
+                    </div>
+                    
+                    <h4 className="text-2xl font-bold text-gray-800 mb-4 relative z-10">{item.title}</h4>
+                    <p className="text-gray-600 leading-relaxed relative z-10">
+                      {item.text}
+                    </p>
+                  </div>
+                </FadeIn>
+              );
+            })}
           </div>
         </div>
       </section>
 
-      {/* --- SEÇÃO DE PRODUTOS --- */}
+      {/* SEÇÃO DE PRODUTOS */}
       <section id="producao" className="py-24 bg-white">
         <div className="container mx-auto px-6">
           <FadeIn>
