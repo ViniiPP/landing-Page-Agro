@@ -228,4 +228,7 @@ npm run build
 
 # 📄 Licença
 
-- **Este projeto está sob a licença MIT. Consulte o arquivo [LICENSE](LICENSE) para mais detalhes.**
+- **Este projeto é proprietário e de uso restrito.**
+- **Todos os direitos são reservados a Vinícius Pereira Polli**.
+
+- **É proibida a cópia, redistribuição ou uso comercial sem autorização prévia.**
