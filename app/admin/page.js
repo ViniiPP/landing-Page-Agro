@@ -27,7 +27,8 @@ import {
   Image as ImageIcon,
   AlertTriangle,
   CheckCircle,
-  X
+  X,
+  Lock // Adicionei ícone de cadeado para o login
 } from "lucide-react";
 
 // ESTILOS PARA ESCONDER BARRA DE SCROLL 
@@ -48,6 +49,7 @@ export default function AdminPage() {
   const [user, setUser] = useState(null);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [errorMsg, setErrorMsg] = useState(""); // NOVO: Estado para erro de login
 
   // Modais
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -72,7 +74,6 @@ export default function AdminPage() {
   const [produtos, setProdutos] = useState([]);
   const [editingId, setEditingId] = useState(null);
 
-  // Cloudinary Config
   const CLOUD_NAME = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME; 
   const UPLOAD_PRESET = process.env.NEXT_PUBLIC_CLOUDINARY_PRESET; 
 
@@ -82,7 +83,6 @@ export default function AdminPage() {
     return url.replace('/upload/', '/upload/w_150,h_150,c_fill,q_auto,f_auto/');
   };
 
-  // Função para extrair public_id da URL
   const getPublicIdFromUrl = (url) => {
     try {
       const parts = url.split('/upload/');
@@ -98,24 +98,20 @@ export default function AdminPage() {
     }
   };
 
-  // Função para abrir modais
   const openSuccessModal = (msg) => {
     setSuccessMessage(msg);
     setShowSuccessModal(true);
     setTimeout(() => setShowSuccessModal(false), 3000);
   };
 
-  // Função para confirmar exclusão
   const confirmDelete = (item) => {
     setItemToDelete(item);
     setShowDeleteModal(true);
   };
 
-  // Função para deletar
   const executeDelete = async () => {
     if (itemToDelete) {
       try {
-        // Tenta apagar imagem via PHP se existir script
         if (itemToDelete.imagemUrl) {
           const publicId = getPublicIdFromUrl(itemToDelete.imagemUrl);
           if (publicId) {
@@ -136,7 +132,6 @@ export default function AdminPage() {
     }
   };
 
-  // Buscar Configurações de Contato
   const fetchConfig = async () => {
     try {
       const docRef = doc(db, "configuracoes", "contato");
@@ -150,13 +145,11 @@ export default function AdminPage() {
     } catch (error) { console.error(error); }
   };
 
-  // Buscar Produtos
   const fetchProdutos = async () => {
     const querySnapshot = await getDocs(collection(db, "produtos"));
     setProdutos(querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
   };
 
-  // Monitorar autenticação
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
@@ -168,7 +161,6 @@ export default function AdminPage() {
     return () => unsubscribe();
   }, []);
   
-  // Salvar Configurações de Contato
   const handleSaveConfig = async (e) => {
     e.preventDefault();
     setLoadingConfig(true);
@@ -183,15 +175,31 @@ export default function AdminPage() {
     setLoadingConfig(false);
   };
 
-  // Login
+  // --- LOGIN PERSONALIZADO ---
   const handleLogin = async (e) => {
     e.preventDefault();
+    setErrorMsg(""); // Limpa erros anteriores
     try {
       await signInWithEmailAndPassword(auth, email, password);
-    } catch (error) { alert("Erro: " + error.message); }
+    } catch (error) {
+      // Traduz erros do Firebase para Português
+      console.log(error.code);
+      switch(error.code) {
+        case 'auth/invalid-credential':
+        case 'auth/wrong-password':
+        case 'auth/user-not-found':
+        case 'auth/invalid-email':
+          setErrorMsg("E-mail ou senha incorretos.");
+          break;
+        case 'auth/too-many-requests':
+          setErrorMsg("Muitas tentativas falhas. Tente novamente mais tarde.");
+          break;
+        default:
+          setErrorMsg("Erro ao entrar. Verifique sua conexão.");
+      }
+    }
   };
 
-  // Preview da Imagem
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -200,7 +208,6 @@ export default function AdminPage() {
     }
   };
 
-  // Editar Produto
   const handleEdit = (produto) => {
     setTitulo(produto.titulo);
     setDescricao(produto.descricao);
@@ -211,12 +218,10 @@ export default function AdminPage() {
     window.scrollTo({ top: 500, behavior: "smooth" });
   };
 
-  // Cancelar Edição
   const handleCancelEdit = () => {
     setTitulo(""); setDescricao(""); setCategoria("graos"); setImagem(null); setPreview(null); setEditingId(null);
   };
 
-  // Salvar Produto (Novo ou Editar)
   const handleSave = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -250,37 +255,55 @@ export default function AdminPage() {
     setLoading(false);
   };
 
-  // TELA DE LOGIN
+  // --- TELA DE LOGIN (NOVO VISUAL COM AVISO DE ERRO) ---
   if (!user) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-100">
-        <form onSubmit={handleLogin} className="bg-white p-8 rounded shadow-md w-96">
-          <h2 className="text-2xl font-bold mb-4 text-center text-green-800">Admin AgroSoja</h2>
+      <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
+        <form onSubmit={handleLogin} className="bg-white p-8 rounded-xl shadow-lg w-full max-w-md border-t-4 border-green-600">
+          
+          <div className="text-center mb-8">
+            <div className="inline-block p-3 rounded-full bg-green-100 mb-2">
+              <Lock className="w-8 h-8 text-green-700" />
+            </div>
+            <h2 className="text-2xl font-bold text-green-800">Admin AgroSoja</h2>
+            <p className="text-gray-500 text-sm">Área restrita para gestão</p>
+          </div>
+
+          {/* MENSAGEM DE ERRO PERSONALIZADA */}
+          {errorMsg && (
+            <div className="mb-6 bg-red-50 border-l-4 border-red-500 p-4 flex items-center gap-3 animate-pulse">
+              <AlertTriangle className="text-red-500 w-5 h-5 flex-shrink-0" />
+              <p className="text-sm text-red-700 font-medium">{errorMsg}</p>
+            </div>
+          )}
+
           <div className="mb-4">
             <label className="block text-sm font-bold text-gray-700 mb-1">Email</label>
             <input 
               type="email" 
-              placeholder="admin@email.com" 
-              className="w-full border p-2 rounded placeholder-gray-400 text-black" 
+              placeholder="Email de acesso" 
+              className="w-full border p-3 rounded-lg placeholder-gray-400 text-black focus:ring-2 focus:ring-green-500 outline-none transition" 
               onChange={(e) => setEmail(e.target.value)} 
             />
           </div>
-          <div className="mb-6">
+          <div className="mb-8">
             <label className="block text-sm font-bold text-gray-700 mb-1">Senha</label>
             <input 
               type="password" 
-              placeholder="******" 
-              className="w-full border p-2 rounded placeholder-gray-400 text-black" 
+              placeholder="Senha de acesso" 
+              className="w-full border p-3 rounded-lg placeholder-gray-400 text-black focus:ring-2 focus:ring-green-500 outline-none transition" 
               onChange={(e) => setPassword(e.target.value)} 
             />
           </div>
-          <button className="w-full bg-green-600 text-white p-2 rounded hover:bg-green-700 cursor-pointer font-bold">Entrar</button>
+          <button className="w-full bg-green-700 text-white p-3 rounded-lg hover:bg-green-800 font-bold transition duration-200 shadow-md cursor-pointer">
+            Acessar Painel
+          </button>
         </form>
       </div>
     );
   }
 
-  // PÁGINA ADMINISTRATIVA
+  //  PAINEL ADMINISTRATIVO
   return (
     <div className="min-h-screen bg-gray-50 p-8">
       <style>{scrollHideStyle}</style>
@@ -301,8 +324,8 @@ export default function AdminPage() {
                   type="text" 
                   value={configTelefone} 
                   onChange={(e) => setConfigTelefone(e.target.value)} 
-                  placeholder="Ex: (00) 00000-0000"
-                  className="border p-2 rounded w-full text-black placeholder-gray-400 focus:ring-2 focus:ring-yellow-500 outline-none"  
+                  placeholder="(00) 00000-0000"
+                  className="border p-2 rounded w-full text-black placeholder-gray-400" 
                 />
               </div>
               <div>
@@ -311,8 +334,8 @@ export default function AdminPage() {
                   type="email" 
                   value={configEmail} 
                   onChange={(e) => setConfigEmail(e.target.value)} 
-                  placeholder="Ex: contato@empresa.com"
-                  className="border p-2 rounded w-full text-black placeholder-gray-400 focus:ring-2 focus:ring-yellow-500 outline-none"  
+                  placeholder="contato@empresa.com"
+                  className="border p-2 rounded w-full text-black placeholder-gray-400" 
                 />
               </div>
             </div>
@@ -322,8 +345,8 @@ export default function AdminPage() {
                 type="text" 
                 value={configEndereco} 
                 onChange={(e) => setConfigEndereco(e.target.value)} 
-                placeholder="Ex: Rodovia X, KM Y - Cidade/UF"
-                className="border p-2 rounded w-full text-black placeholder-gray-400 focus:ring-2 focus:ring-yellow-500 outline-none" 
+                placeholder="Rodovia X, KM Y - Cidade/UF"
+                className="border p-2 rounded w-full text-black placeholder-gray-400" 
               />
             </div>
             <button disabled={loadingConfig} className="bg-yellow-500 text-white p-2 rounded font-bold hover:bg-yellow-600 w-full md:w-auto cursor-pointer transition mt-2">{loadingConfig ? "Salvando..." : "Atualizar Dados de Contato"}</button>
@@ -385,13 +408,12 @@ export default function AdminPage() {
         </div>
 
         {/* LISTA DE PRODUTOS */}
-        <div className="grid gap-4">
-          <h3 className="text-lg font-bold text-gray-600 mb-2 pl-1 border-l-4 border-gray-300">Produtos Cadastrados ({produtos.length})</h3>
+        <div className="grid gap-5">
+          <h3 className="text-xl font-bold text-gray-600 mb-2 pl-1 border-l-4 border-gray-500">Produtos Cadastrados ({produtos.length})</h3>
           {produtos.length === 0 && <p className="text-gray-400 italic">Nenhum produto cadastrado.</p>}
           {produtos.map((prod) => (
-            <div key={prod.id} className="bg-white p-4 rounded shadow flex items-center justify-between border-l-4 border-green-500 hover:bg-gray-200 transition">
+            <div key={prod.id} className="bg-white p-4 rounded shadow flex items-center justify-between border-l-4 border-gray-500 hover:bg-gray-200 transition">
               <div className="flex items-center gap-4">
-                {/* getThumbnail para a lista não pesar */}
                 <div className="w-20 h-20 rounded overflow-hidden bg-gray-200 border border-gray-300 flex-shrink-0">
                   <img src={getThumbnail(prod.imagemUrl)} alt={prod.titulo} loading="lazy" className="w-full h-full object-cover" />
                 </div>
@@ -406,7 +428,7 @@ export default function AdminPage() {
         </div>
       </div>
 
-      {/* MODAL DE CONFIRMAÇÃO DE EXCLUSÃO */}
+      {/* --- MODAL DE CONFIRMAÇÃO DE EXCLUSÃO --- */}
       {showDeleteModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fadeIn">
           <div className="bg-white rounded-lg shadow-2xl w-full max-w-sm overflow-hidden animate-scaleIn">
@@ -423,7 +445,7 @@ export default function AdminPage() {
         </div>
       )}
 
-      {/* MODAL DE SUCESSO  */}
+      {/* --- MODAL DE SUCESSO --- */}
       {showSuccessModal && (
         <div className="fixed inset-0 z-50 flex items-start justify-center sm:items-start sm:justify-end p-6 pointer-events-none">
           <div className="mt-4 sm:mt-0 bg-white rounded-lg shadow-2xl border-l-4 border-green-500 p-4 flex items-center gap-4 animate-slideIn pointer-events-auto max-w-sm w-full">
