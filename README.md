@@ -61,8 +61,8 @@ Este projeto foi desenvolvido para oferecer autonomia digital ao produtor rural.
 ### 1. Clone o repositório
 
 ```bash
-git clone https://github.com/SEU_USUARIO/NOME_DO_REPO.git
-cd NOME_DO_REPO
+git clone https://github.com/ViniiPP/landing-Page-Agro.git
+cd landing-Page-Agro
 ```
 
 ### 2. Instale as dependências
