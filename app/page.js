@@ -2,7 +2,18 @@
 import { useEffect, useState, useRef } from 'react';
 import { collection, getDocs, doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { Phone, Target, Eye, Sprout, Tractor, MessageCircle, X, ChevronLeft, ChevronRight, Hand } from 'lucide-react';
+import { Phone, Target, Eye, Sprout, Tractor, MessageCircle, X, ChevronLeft, ChevronRight, Hand, Menu } from 'lucide-react'; // Adicionei 'Menu'
+
+// --- ESTILOS PARA ESCONDER BARRA DE SCROLL ---
+const scrollHideStyle = `
+  .scrollbar-hide::-webkit-scrollbar {
+      display: none;
+  }
+  .scrollbar-hide {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+  }
+`;
 
 function FadeIn({ children, delay = 0, className = "" }) {
   const [isVisible, setIsVisible] = useState(false);
@@ -10,25 +21,18 @@ function FadeIn({ children, delay = 0, className = "" }) {
 
   useEffect(() => {
     const observer = new IntersectionObserver(entries => {
-      if (entries[0].isIntersecting) {
-        setIsVisible(true);
-        observer.unobserve(domRef.current);
-      }
-    }, { threshold: 0.1 }); 
-
-    const current = domRef.current;
+      entries.forEach(entry => setIsVisible(entry.isIntersecting));
+    });
+    const { current } = domRef;
     if (current) observer.observe(current);
-    
-    return () => {
-      if (current) observer.unobserve(current);
-    };
+    return () => observer.unobserve(current);
   }, []);
 
   return (
     <div
       ref={domRef}
-      className={`transition-all duration-700 ease-out transform ${
-        isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+      className={`transition-all duration-1000 ease-out transform ${
+        isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-20'
       } ${className}`}
       style={{ transitionDelay: `${delay}ms` }}
     >
@@ -42,7 +46,10 @@ export default function LandingPage() {
   const [filtro, setFiltro] = useState('todos');
   const [produtoSelecionado, setProdutoSelecionado] = useState(null);
   
-  // PAGINAÇÃO RESPONSIVA
+  // ESTADO DO MENU MOBILE (NOVO)
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  // PAGINAÇÃO DESKTOP
   const [paginaAtual, setPaginaAtual] = useState(0);
   const [itensPorPagina, setItensPorPagina] = useState(6);
   
@@ -50,24 +57,22 @@ export default function LandingPage() {
   const [formNome, setFormNome] = useState('');
   const [formAssunto, setFormAssunto] = useState('');
 
-  // ESTADOS DO CONTATO
   const [contato, setContato] = useState({
     telefone: '(00) 00000-0000',
     email: 'contato@agrosoja.com',
     endereco: 'Endereço não cadastrado'
   });
 
-  // AJUSTA ITENS POR PÁGINA CONFORME LARGURA DA TELA
+  // DETECTAR TAMANHO DA TELA
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth < 768) {
-        setItensPorPagina(1); // Mobile: 1 item por vez
+        setItensPorPagina(1);
       } else {
-        setItensPorPagina(6); // PC: 6 itens (3x2)
+        setItensPorPagina(6);
+        setIsMenuOpen(false); // Fecha o menu se a pessoa aumentar a tela
       }
     };
-
-    // Executa ao carregar e quando redimensionar a tela
     handleResize();
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
@@ -91,10 +96,8 @@ export default function LandingPage() {
     setPaginaAtual(0);
   };
 
-  // LÓGICA DE FILTRO
   const produtosFiltrados = filtro === 'todos' ? produtos : produtos.filter(p => p.categoria === filtro);
   
-  // LÓGICA DE CORTE DOS PRODUTOS
   const produtosVisiveis = produtosFiltrados.slice(
     paginaAtual * itensPorPagina,
     (paginaAtual + 1) * itensPorPagina
@@ -102,7 +105,6 @@ export default function LandingPage() {
   
   const totalPaginas = Math.ceil(produtosFiltrados.length / itensPorPagina);
 
-  // Se redimensionar e a página atual não existir mais, volta pra 0
   useEffect(() => {
     if (totalPaginas > 0 && paginaAtual >= totalPaginas) {
       const timer = setTimeout(() => {
@@ -124,49 +126,94 @@ export default function LandingPage() {
     window.open(`https://wa.me/55${cleanPhone}?text=${encodedMessage}`, '_blank');
   };
 
-  // Função para pedir imagem leve ao Cloudinary
   const otimizarImagem = (url) => {
     if (!url || !url.includes('cloudinary.com')) return url;
-    // Insere transformações: f_auto (melhor formato), q_auto (qualidade equilibrada), w_600 (largura max 600px)
     return url.replace('/upload/', '/upload/f_auto,q_auto,w_600/');
   };
 
+  // Links de navegação
+  const navLinks = [
+    { name: 'Início', id: 'home' },
+    { name: 'Sobre', id: 'sobre' },
+    { name: 'Produção', id: 'producao' },
+    { name: 'Contato', id: 'contato' }
+  ];
+
   return (
     <main className="min-h-screen font-sans text-gray-800 bg-gray-50 selection:bg-green-200 selection:text-green-900">
-      
-      {/* HEADER */}
-      <header className="fixed w-full bg-white/90 backdrop-blur-md shadow-sm z-50 transition-all duration-300">
-        <div className="container mx-auto px-6 py-4 flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-green-800 flex items-center gap-2 hover:scale-105 transition-transform cursor-default">
-            <Sprout className="text-green-600" /> AgroSoja
-          </h1>
-          <nav className="hidden md:flex gap-8 text-sm font-medium text-gray-600">
-            {[
-              { name: 'Início', id: 'home' },
-              { name: 'Sobre', id: 'sobre' },
-              { name: 'Produção', id: 'producao' },
-              { name: 'Contato', id: 'contato' }
-            ].map((item) => (
-              <a key={item.name} href={`#${item.id}`} className="hover:text-green-600 hover:-translate-y-0.5 transition-all relative group">
-                {item.name}
-                <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-green-600 transition-all group-hover:w-full"></span>
+      <style>{scrollHideStyle}</style>
+
+       {/* HEADER: Grid no PC (3 colunas), Flex no Mobile */}
+      <header className="fixed w-full bg-white/95 backdrop-blur-md shadow-sm z-50 transition-all duration-300">
+        <div className="container mx-auto px-6 py-5">
+          
+          <div className="flex justify-between items-center md:grid md:grid-cols-3">
+            
+            {/* 1. LOGO (Esquerda) */}
+            <h1 className="text-2xl font-bold text-green-800 flex items-center gap-2 hover:scale-105 transition-transform cursor-default z-50 justify-self-start">
+              <Sprout className="text-green-600" /> AgroSoja
+            </h1>
+            
+            {/* 2. MENU (Centro exato) */}
+            <nav className="hidden md:flex gap-8 text-sm font-medium text-gray-600 justify-self-center">
+              {navLinks.map((item) => (
+                <a key={item.name} href={`#${item.id}`} className="hover:text-green-600 hover:-translate-y-0.5 transition-all relative group">
+                  {item.name}
+                  <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-green-600 transition-all group-hover:w-full"></span>
+                </a>
+              ))}
+            </nav>
+
+            {/* 3. LADO DIREITO (Vazio no PC, Menu Hambúrguer no Mobile) */}
+            <div className="flex items-center justify-end md:justify-self-end">
+              
+              {/* Botão Fale Conosco removido daqui para o Desktop */}
+
+              {/* Botão Mobile (Hambúrguer) */}
+              <button 
+                className="md:hidden text-green-800 z-50 p-2 rounded hover:bg-green-50"
+                onClick={() => setIsMenuOpen(!isMenuOpen)}
+              >
+                {isMenuOpen ? <X size={28} /> : <Menu size={28} />}
+              </button>
+            </div>
+          </div>
+
+          {/* MENU MOBILE EXPANSÍVEL */}
+          <div className={`md:hidden absolute top-full left-0 w-full bg-white shadow-lg transition-all duration-300 ease-in-out overflow-hidden ${isMenuOpen ? 'max-h-96 border-t border-gray-100' : 'max-h-0'}`}>
+            <nav className="flex flex-col p-6 gap-4">
+              {navLinks.map((item) => (
+                <a 
+                  key={item.name} 
+                  href={`#${item.id}`} 
+                  onClick={() => setIsMenuOpen(false)} 
+                  className="text-lg font-medium text-gray-700 hover:text-green-600 border-b border-gray-50 pb-2"
+                >
+                  {item.name}
+                </a>
+              ))}
+              <a 
+                href={whatsAppLinkPadrao} 
+                target="_blank"
+                className="mt-2 text-center bg-green-600 text-white font-bold py-3 rounded-lg hover:bg-green-700 transition"
+              >
+                Fale no WhatsApp
               </a>
-            ))}
-          </nav>
-          <a href={whatsAppLinkPadrao} target="_blank" className="bg-green-600 text-white px-5 py-2.5 rounded-full text-sm font-bold shadow-lg hover:bg-green-700 hover:shadow-green-200 hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
-            Fale Conosco
-          </a>
+            </nav>
+          </div>
         </div>
       </header>
 
-      {/* HERO SECTION */}
+      {/* HERO SECTION - Espaçamento Mobile Ajustado */}
       <section id="home" className="relative h-screen flex items-center justify-center overflow-hidden">
         <div className="absolute inset-0 bg-black/40 z-10"></div>
         <div className="absolute inset-0 bg-cover bg-center animate-slow-zoom blur-xs" style={{ backgroundImage: "url('/imgs/soja.jpg')" }}></div>
-        <div className="relative z-20 text-center text-white px-4">
+        
+        {/* AQUI ESTÁ A MUDANÇA: px-8 no mobile (antes era px-4) */}
+        <div className="relative z-20 text-center text-white px-8 md:px-4 max-w-4xl">
           <FadeIn>
             <h2 className="text-5xl md:text-7xl font-bold mb-6 drop-shadow-lg tracking-tight">Excelência do<br/>Plantio à Colheita</h2>
-            <p className="text-xl md:text-2xl mb-10 max-w-2xl mx-auto drop-shadow-md text-gray-100 font-light">Soluções estratégicas e grãos de alta qualidade para o mercado global.</p>
+            <p className="text-xl md:text-2xl mb-10 max-w-2xl mx-auto drop-shadow-md text-gray-100 font-light leading-relaxed">Soluções estratégicas e grãos de alta qualidade para o mercado global.</p>
             <div className="flex flex-col md:flex-row gap-4 justify-center">
               <a href="#producao" className="bg-yellow-500 text-green-950 font-bold px-8 py-4 rounded-full hover:bg-yellow-400 hover:scale-105 transition-all shadow-lg hover:shadow-yellow-500/30">
                 Ver Nossa Produção
@@ -179,44 +226,62 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* MISSÃO VISÃO VALORES */}
-      <section id="sobre" className="py-24 bg-white">
+      {/* MISSÃO VISÃO VALORES - BLOCOS ESTRATÉGICOS */}
+      <section id="sobre" className="py-24 bg-gray-50">
         <div className="container mx-auto px-6">
           <FadeIn>
             <div className="text-center mb-16">
-              <h3 className="text-3xl font-bold text-green-800 mb-2">Identidade Organizacional</h3>
-              <div className="w-20 h-1 bg-green-500 mx-auto rounded-full"></div>
-              <p className="text-gray-500 mt-4">Nossos pilares de sustentação</p>
+              <span className="text-green-600 font-bold tracking-wider uppercase text-sm">Planejamento Estratégico</span>
+              <h3 className="text-3xl md:text-4xl font-bold text-gray-900 mt-2">Identidade Organizacional</h3>
+              <div className="w-24 h-1.5 bg-green-500 mx-auto rounded-full mt-4"></div>
             </div>
           </FadeIn>
+          
           <div className="grid md:grid-cols-3 gap-8">
             <FadeIn delay={100}>
-              <div className="p-10 bg-green-50 rounded-2xl hover:shadow-xl hover:-translate-y-2 transition-all duration-300 border border-green-100 group">
-                <Target className="w-14 h-14 text-green-600 mb-6 group-hover:scale-110 transition-transform" />
-                <h4 className="text-xl font-bold mb-3 text-green-900">Missão</h4>
-                <p className="text-gray-600 leading-relaxed">Produzir soja com sustentabilidade e alta tecnologia, garantindo segurança alimentar com responsabilidade.</p>
+              <div className="bg-white p-10 rounded-xl shadow-md hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 border-b-4 border-green-500 group h-full flex flex-col items-center text-center relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-green-50 rounded-bl-full -mr-8 -mt-8 transition-transform group-hover:scale-110"></div>
+                <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mb-6 relative z-10 group-hover:bg-green-600 transition-colors duration-300">
+                  <Target className="w-10 h-10 text-green-700 group-hover:text-white transition-colors duration-300" />
+                </div>
+                <h4 className="text-2xl font-bold text-gray-800 mb-4 relative z-10">Missão</h4>
+                <p className="text-gray-600 leading-relaxed relative z-10">
+                  Produzir soja com sustentabilidade e alta tecnologia, garantindo segurança alimentar e gerando valor para a sociedade e parceiros.
+                </p>
               </div>
             </FadeIn>
+
             <FadeIn delay={300}>
-              <div className="p-10 bg-green-50 rounded-2xl hover:shadow-xl hover:-translate-y-2 transition-all duration-300 border border-green-100 group">
-                <Eye className="w-14 h-14 text-green-600 mb-6 group-hover:scale-110 transition-transform" />
-                <h4 className="text-xl font-bold mb-3 text-green-900">Visão</h4>
-                <p className="text-gray-600 leading-relaxed">Ser referência nacional em produtividade e qualidade de grãos, expandindo fronteiras até 2030.</p>
+              <div className="bg-white p-10 rounded-xl shadow-md hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 border-b-4 border-yellow-500 group h-full flex flex-col items-center text-center relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-yellow-50 rounded-bl-full -mr-8 -mt-8 transition-transform group-hover:scale-110"></div>
+                <div className="w-20 h-20 bg-yellow-100 rounded-full flex items-center justify-center mb-6 relative z-10 group-hover:bg-yellow-500 transition-colors duration-300">
+                  <Eye className="w-10 h-10 text-yellow-700 group-hover:text-white transition-colors duration-300" />
+                </div>
+                <h4 className="text-2xl font-bold text-gray-800 mb-4 relative z-10">Visão</h4>
+                <p className="text-gray-600 leading-relaxed relative z-10">
+                  Ser referência nacional em produtividade e qualidade de grãos até 2030, expandindo fronteiras agrícolas com inovação.
+                </p>
               </div>
             </FadeIn>
+
             <FadeIn delay={500}>
-              <div className="p-10 bg-green-50 rounded-2xl hover:shadow-xl hover:-translate-y-2 transition-all duration-300 border border-green-100 group">
-                <Sprout className="w-14 h-14 text-green-600 mb-6 group-hover:scale-110 transition-transform" />
-                <h4 className="text-xl font-bold mb-3 text-green-900">Valores</h4>
-                <p className="text-gray-600 leading-relaxed">Ética em cada negócio, Respeito à Terra, Inovação Constante e Compromisso com o Cliente.</p>
+              <div className="bg-white p-10 rounded-xl shadow-md hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 border-b-4 border-green-500 group h-full flex flex-col items-center text-center relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-green-50 rounded-bl-full -mr-8 -mt-8 transition-transform group-hover:scale-110"></div>
+                <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mb-6 relative z-10 group-hover:bg-green-600 transition-colors duration-300">
+                  <Sprout className="w-10 h-10 text-green-700 group-hover:text-white transition-colors duration-300" />
+                </div>
+                <h4 className="text-2xl font-bold text-gray-800 mb-4 relative z-10">Valores</h4>
+                <p className="text-gray-600 leading-relaxed relative z-10">
+                  Ética em cada negócio, Respeito à Terra e ao Meio Ambiente, Inovação Constante e Compromisso total com o Cliente.
+                </p>
               </div>
             </FadeIn>
           </div>
         </div>
       </section>
 
-      {/* SEÇÃO DE PRODUTOS  */}
-      <section id="producao" className="py-24 bg-gray-50">
+      {/* --- SEÇÃO DE PRODUTOS --- */}
+      <section id="producao" className="py-24 bg-white">
         <div className="container mx-auto px-6">
           <FadeIn>
             <div className="text-center mb-10">
@@ -240,18 +305,16 @@ export default function LandingPage() {
             </div>
           </FadeIn>
 
-          {/* Botão Anterior */}
           <div className="relative px-12 md:px-20 min-h-[400px]">
             {paginaAtual > 0 && (
-              <button onClick={() => setPaginaAtual(prev => prev - 1)} className="absolute left-0 top-1/2 -translate-y-1/2 bg-white p-2 md:p-3 rounded-full shadow-lg text-green-800 hover:bg-green-50 hover:scale-110 transition z-10 cursor-pointer border border-gray-100">
+              <button 
+                onClick={() => setPaginaAtual(prev => prev - 1)}
+                className="absolute left-0 top-1/2 -translate-y-1/2 bg-white p-2 md:p-3 rounded-full shadow-lg text-green-800 hover:bg-green-50 hover:scale-110 transition z-10 cursor-pointer border border-gray-100"
+              >
                 <ChevronLeft size={24} className="md:w-8 md:h-8" />
               </button>
             )}
 
-            {/* O GRID: 
-                - Mobile: grid-cols-1 (1 por vez)
-                - Desktop: grid-cols-3 (3 colunas)
-            */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               {produtosVisiveis.length === 0 && <p className="text-center col-span-3 text-gray-400 py-10">Nenhum produto encontrado nesta categoria.</p>}
               
@@ -259,10 +322,7 @@ export default function LandingPage() {
                 <FadeIn key={item.id} delay={index * 50} className="h-full">
                   <div className="bg-white rounded-2xl shadow-sm overflow-hidden hover:shadow-xl transition-all duration-300 group border border-gray-100 hover:-translate-y-1 h-full flex flex-col">
                     <div className="h-64 overflow-hidden cursor-pointer relative shrink-0" onClick={() => setProdutoSelecionado(item)}>
-                      {/* OTIMIZAÇÃO: Usando a função otimizarImagem na URL */}
                       <img src={otimizarImagem(item.imagemUrl)} alt={item.titulo} loading="lazy" className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
-                      
-                      {/* OTIMIZAÇÃO: Removido backdrop-blur, usando apenas bg-black/40 */}
                       <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition duration-300 flex items-center justify-center">
                         <span className="text-white bg-white/20 border border-white/50 px-6 py-2 rounded-full text-sm font-bold hover:bg-white hover:text-black transition">Ver Detalhes</span>
                       </div>
@@ -280,14 +340,15 @@ export default function LandingPage() {
               ))}
             </div>
 
-            {/* Botão Próximo */}
             {(paginaAtual + 1) < totalPaginas && (
-              <button onClick={() => setPaginaAtual(prev => prev + 1)} className="absolute right-0 top-1/2 -translate-y-1/2 bg-white p-2 md:p-3 rounded-full shadow-lg text-green-800 hover:bg-green-50 hover:scale-110 transition z-10 cursor-pointer border border-gray-100">
+              <button 
+                onClick={() => setPaginaAtual(prev => prev + 1)}
+                className="absolute right-0 top-1/2 -translate-y-1/2 bg-white p-2 md:p-3 rounded-full shadow-lg text-green-800 hover:bg-green-50 hover:scale-110 transition z-10 cursor-pointer border border-gray-100"
+              >
                 <ChevronRight size={24} className="md:w-8 md:h-8" />
               </button>
             )}
 
-            {/* Indicador de Páginas */}
             {totalPaginas > 1 && (
               <div className="flex justify-center gap-2 mt-12">
                 {[...Array(totalPaginas)].map((_, idx) => (
@@ -303,6 +364,7 @@ export default function LandingPage() {
       <section id="contato" className="py-24 bg-green-900 text-white relative overflow-hidden">
         <div className="absolute top-0 right-0 w-96 h-96 bg-green-800 rounded-full blur-3xl opacity-50 -translate-y-1/2 translate-x-1/2"></div>
         <div className="absolute bottom-0 left-0 w-64 h-64 bg-yellow-600 rounded-full blur-3xl opacity-20 translate-y-1/2 -translate-x-1/2"></div>
+
         <div className="container mx-auto px-6 relative z-10">
           <FadeIn>
             <div className="grid md:grid-cols-2 gap-16 items-center">
