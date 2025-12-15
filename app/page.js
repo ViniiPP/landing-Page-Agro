@@ -363,8 +363,8 @@ export default function LandingPage() {
 
                 <img
                   src="/imgs/AgroSoja_Logo_FundoBranco.png"
-                  alt="Nossa Fazenda"
-                  className="w-full rounded-xl shadow-2xl hover:scale-[1.01] transition-transform duration-500 object-cover h-[650px]"
+                  alt="Nossa Empresa"
+                  className="w-full rounded-xl shadow-2xl hover:scale-[1.01] transition-transform duration-500 object-cover h-auto md:h-[650px]"
                 />
                 
                 {/* Selo Flutuante */}
