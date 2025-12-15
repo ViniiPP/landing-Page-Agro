@@ -247,13 +247,32 @@ export default function LandingPage() {
     { name: "Contato", id: "contato" },
   ];
 
+const [hidden, setHidden] = useState(false)
+const lastScrollY = useRef(0)
+
+useEffect(() => {
+  if (window.innerWidth < 768) return
+
+  const handleScroll = () => {
+    const currentScrollY = window.scrollY
+    const shouldHide = currentScrollY > lastScrollY.current && currentScrollY > 80
+
+    setHidden(shouldHide)
+    lastScrollY.current = currentScrollY
+  }
+
+  window.addEventListener("scroll", handleScroll)
+  return () => window.removeEventListener("scroll", handleScroll)
+}, [])
+
+
   // RENDERIZAÇÃO DA PÁGINA
   return (
     <main className="min-h-screen font-sans text-gray-800 bg-gray-50 selection:bg-green-200 selection:text-green-900">
       <style>{scrollHideStyle}</style>
 
       {/* HEADER */}
-      <header className="fixed w-full bg-white/95 backdrop-blur-md shadow-sm z-50 transition-all duration-300">
+      <header className={`fixed top-0 w-full z-50 bg-white md:bg-white/80 border-b border-gray-200 md:border-white/30 shadow-sm transition-transform duration-300 md:backdrop-blur-xs ${hidden ? "-translate-y-full" : "translate-y-0"}`}>
         <div className="container mx-auto px-6 py-4">
           <div className="flex justify-between items-center md:grid md:grid-cols-3">
             <h1 className="text-2xl font-bold text-green-800 flex items-center gap-2 hover:scale-105 transition-transform cursor-default z-50 justify-self-start">
@@ -318,7 +337,7 @@ export default function LandingPage() {
         <div className="absolute inset-0 bg-black/40 z-10"></div>
         <div
           className="absolute inset-0 bg-cover bg-center animate-slow-zoom blur-xs"
-          style={{ backgroundImage: "url('/imgs/soja.jpg')" }}
+          style={{ backgroundImage: "url('/imgs/capa1.jpg')" }}
         ></div>
         <div className="relative z-20 text-center text-white px-8 md:px-4 max-w-4xl">
           <FadeIn>
