@@ -8,7 +8,7 @@
 ![Firebase](https://img.shields.io/badge/Firebase-Firestore-orange)
 
 ---
-### Site Hospedado para testes: https://leading-page-agro.vercel.app
+### Site Hospedado para testes: https://landing-page-agrosoja.vercel.app
 ---
 
 ## 📋 Sobre o Projeto
