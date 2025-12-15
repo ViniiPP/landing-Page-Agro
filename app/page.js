@@ -349,8 +349,82 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* QUEM SOMOS */}
+      <section id="sobre" className="py-24 bg-white overflow-hidden">
+        <div className="container mx-auto px-6">
+          <div className="grid md:grid-cols-2 gap-12 items-center">
+            
+            {/* LADO ESQUERDO: IMAGEM */}
+            <FadeIn>
+              <div className="relative">
+                {/* Elementos decorativos */}
+                <div className="absolute -left-4 -top-4 w-24 h-24 bg-yellow-100 rounded-tl-3xl -z-10"></div>
+                <div className="absolute -right-4 -bottom-4 w-24 h-24 bg-green-100 rounded-br-3xl -z-10"></div>
+
+                <img
+                  src="/imgs/AgroSoja_Logo_FundoBranco.png"
+                  alt="Nossa Fazenda"
+                  className="w-full rounded-xl shadow-2xl hover:scale-[1.01] transition-transform duration-500 object-cover h-[650px]"
+                />
+                
+                {/* Selo Flutuante */}
+                <div className="absolute bottom-8 -left-6 bg-white p-4 rounded-lg shadow-xl border-l-4 border-green-600 hidden md:block">
+                  <div className="flex items-center gap-3">
+                    <Tractor className="w-8 h-8 text-green-600" />
+                    <div>
+                      <p className="text-xs text-gray-500 font-bold uppercase">Desde</p>
+                      <p className="text-xl font-bold text-gray-800">2004</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </FadeIn>
+
+            {/* LADO DIREITO: TEXTO */}
+            <FadeIn delay={200}>
+              <div className="md:pl-10">
+                <span className="text-green-600 font-bold tracking-wider uppercase text-sm flex items-center gap-2 mb-4">
+                  <div className="w-8 h-0.5 bg-green-600"></div>
+                  Sobre a AgroSoja
+                </span>
+                
+                <h3 className="text-3xl md:text-4xl font-bold text-gray-900 mb-6 leading-tight">
+                  Tradição que brota da terra e alimenta o futuro.
+                </h3>
+                
+                <p className="text-gray-600 text-lg leading-relaxed mb-6">
+                  Há mais de 20 anos, cultivamos mais do que soja; cultivamos confiança. 
+                  Nossa história começou com um pequeno pedaço de terra e um grande sonho: 
+                  produzir grãos de excelência respeitando os ciclos da natureza.
+                </p>
+                
+                <p className="text-gray-600 leading-relaxed mb-8">
+                  Hoje, unimos a sabedoria do campo com tecnologia de ponta para garantir 
+                  produtividade recorde e sustentabilidade em cada semente plantada. 
+                  Somos parceiros do produtor e garantia de qualidade para a indústria.
+                </p>
+
+                {/* Dados Rápidos */}
+                <div className="flex gap-8 border-t border-gray-100 pt-6">
+                  <div>
+                    <span className="text-3xl font-bold text-green-700 block">+20</span>
+                    <span className="text-sm text-gray-500">Anos de História</span>
+                  </div>
+                  <div className="w-px bg-gray-200"></div>
+                  <div>
+                    <span className="text-3xl font-bold text-yellow-600 block">100%</span>
+                    <span className="text-sm text-gray-500">Compromisso</span>
+                  </div>
+                </div>
+              </div>
+            </FadeIn>
+
+          </div>
+        </div>
+      </section>
+
       {/* MISSÃO / VISÃO / VALORES - COM HOVER AUTOMÁTICO MOBILE */}
-      <section id="sobre" className="py-24 bg-gray-50">
+      <section id="" className="py-24 bg-gray-50">
         <div className="container mx-auto px-6">
           <FadeIn>
             <div className="text-center mb-16">
